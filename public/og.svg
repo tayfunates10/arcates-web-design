@@ -1,0 +1,11 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="630" fill="#07111F"/>
+  <path d="M0 80H1200M0 160H1200M0 240H1200M0 320H1200M0 400H1200M0 480H1200M0 560H1200M120 0V630M240 0V630M360 0V630M480 0V630M600 0V630M720 0V630M840 0V630M960 0V630M1080 0V630" stroke="#1D8CFF" stroke-opacity="0.08"/>
+  <circle cx="925" cy="315" r="230" fill="#1D8CFF" fill-opacity="0.08"/>
+  <path d="M920 132L1074 220V397L920 485L766 397V220L920 132Z" stroke="#20E7FF" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M850 394L920 237L990 394M870 347H970" stroke="#F5F8FC" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="920" cy="237" r="9" fill="#1D8CFF"/><circle cx="850" cy="394" r="9" fill="#1D8CFF"/><circle cx="990" cy="394" r="9" fill="#1D8CFF"/>
+  <text x="100" y="245" fill="#20E7FF" font-family="Arial, sans-serif" font-size="24" letter-spacing="5">DIGITAL ENGINEERING</text>
+  <text x="100" y="345" fill="#F5F8FC" font-family="Arial, sans-serif" font-size="92" font-weight="700">ARCATES</text>
+  <text x="100" y="405" fill="#AAB6C5" font-family="Arial, sans-serif" font-size="30">Web, yazılım ve yapay zekâ çözümleri</text>
+</svg>

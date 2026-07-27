@@ -1,0 +1,46 @@
+import { NextResponse } from "next/server";
+
+const MAX_MESSAGE_LENGTH = 2_000;
+
+export async function POST(request: Request) {
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Geçersiz istek gövdesi." }, { status: 400 });
+  }
+
+  const message = typeof body === "object" && body !== null && "message" in body
+    ? String((body as { message: unknown }).message).trim()
+    : "";
+
+  if (!message) return NextResponse.json({ error: "Mesaj boş olamaz." }, { status: 400 });
+  if (message.length > MAX_MESSAGE_LENGTH) return NextResponse.json({ error: "Mesaj çok uzun." }, { status: 413 });
+
+  return NextResponse.json({ reply: buildReply(message) });
+}
+
+function buildReply(message: string) {
+  const normalized = message.toLocaleLowerCase("tr-TR");
+
+  if (/(chatbot|yapay zek|whatsapp|asistan)/.test(normalized)) {
+    return "Size web ve WhatsApp kanallarında aynı bilgi tabanını kullanan bir chatbot altyapısı uygundur. İlk kapsam; ziyaretçi yönlendirmesi, teklif toplama, güvenli hesap eşleştirme, destek talebi ve insan temsilci aktarımını içermelidir. İşlem yapan araçlar giriş ve açık kullanıcı onayı gerektirir.";
+  }
+  if (/(e.?ticaret|ürün|satış|sipariş|ödeme)/.test(normalized)) {
+    return "İhtiyacınız e-ticaret veya ürün kataloğu çözümüne yakın görünüyor. Ürün yönetimi, ödeme ve sipariş akışı, kargo bağlantıları, dönüşüm analitiği ve SEO kapsamını netleştirmeliyiz. Fiziksel ödeme mi, teklif toplama mı istediğinizi proje analizinde ayırırız.";
+  }
+  if (/(kurumsal|firma|şirket|web site|internet sitesi)/.test(normalized)) {
+    return "Kurumsal web çözümü için marka mesajı, hizmet mimarisi, yönetim paneli, teknik SEO, mobil performans ve dönüşüm noktalarını birlikte planlamalıyız. Mevcut siteniz, hedef müşteriniz ve temel hizmetleriniz proje kapsamını belirler.";
+  }
+  if (/(özel yazılım|panel|crm|otomasyon|uygulama|saas)/.test(normalized)) {
+    return "Bu ihtiyaç özel web yazılımı kapsamına giriyor. Kullanıcı rolleri, ana iş akışları, veri modeli, entegrasyonlar, raporlar ve doğrulama kuralları keşif aşamasında çıkarılmalıdır. Önce en kritik kullanıcı görevini ve bugün nasıl yürütüldüğünü tanımlayalım.";
+  }
+  if (/(seo|google|performans|hız|yavaş)/.test(normalized)) {
+    return "SEO ve performans çalışmasını içerik, teknik taranabilirlik ve gerçek kullanıcı deneyimi olarak üç bölümde ele alırız. Core Web Vitals, sayfa mimarisi, semantik HTML, metadata, yapılandırılmış veri ve ölçüm sistemi birlikte incelenmelidir.";
+  }
+  if (/(fiyat|maliyet|bütçe|ücret|teklif)/.test(normalized)) {
+    return "Net teklif; sayfa sayısı, özel özellikler, içerik hazırlığı, entegrasyonlar, kullanıcı rolleri ve bakım kapsamına göre oluşturulur. Önce ihtiyaçları kısa bir proje kapsamına dönüştürmek, eksik veya gereksiz kalemleri önler.";
+  }
+
+  return "Talebinizi web çözümü, özel yazılım, e-ticaret, yapay zekâ, otomasyon veya performans başlıklarından biriyle eşleştirebilirim. İşletmenizi, hedefinizi ve bugün kullandığınız yöntemi belirtirseniz daha net bir çözüm kapsamı oluşturabilirim.";
+}
