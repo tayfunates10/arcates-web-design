@@ -11,7 +11,28 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: arcates_ci
+          POSTGRES_USER: arcates
+          POSTGRES_PASSWORD: arcates_ci_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U arcates -d arcates_ci"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=12
+    env:
+      DATABASE_URL: postgresql://arcates:arcates_ci_password@localhost:5432/arcates_ci?schema=public
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      ARCATES_OWNER_NAME: Arcates CI Owner
+      ARCATES_OWNER_EMAIL: owner-ci@arcates.local
+      ARCATES_OWNER_PASSWORD: ArcatesCiOwner2026
+      RATE_LIMIT_SECRET: arcates-ci-rate-limit-secret
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -22,9 +43,26 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
       - name: Validate database schema
-        env:
-          DATABASE_URL: postgresql://arcates:arcates@localhost:5432/arcates
         run: npm run db:validate
+      - name: Deploy migrations to clean PostgreSQL
+        run: npm run db:deploy
+      - name: Verify migration status
+        run: npm run db:status
+      - name: Detect schema drift
+        shell: bash
+        run: |
+          set +e
+          npx prisma migrate diff \
+            --from-url "$DATABASE_URL" \
+            --to-schema-datamodel prisma/schema.prisma \
+            --exit-code > migration-drift.log 2>&1
+          status=$?
+          cat migration-drift.log
+          exit $status
+      - name: Seed owner and verified content
+        run: npm run db:seed
+      - name: Run behavior tests
+        run: npm test
       - name: Type check
         run: npm run typecheck
       - name: Production build
@@ -33,13 +71,19 @@ jobs:
           set +e
           npm run build > build.log 2>&1
           status=$?
-          tail -n 60 build.log
+          tail -n 80 build.log
           exit $status
-      - name: Upload build log
+      - name: Build migration container
+        run: docker build --target migrate -t arcates-migrate:ci .
+      - name: Build application container
+        run: docker build --target runner -t arcates-web:ci .
+      - name: Upload verification logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: build-log
-          path: build.log
+          name: verification-logs
+          path: |
+            build.log
+            migration-drift.log
           if-no-files-found: warn
-          retention-days: 3
+          retention-days: 5
