@@ -3,8 +3,9 @@
 import { randomBytes } from "node:crypto";
 import { redirect } from "next/navigation";
 import { hashPassword } from "@/lib/auth/password";
-import { createSession } from "@/lib/auth/session";
+import { sendVerificationEmail } from "@/lib/auth/email-flows";
 import { databaseConfigured, db } from "@/lib/db";
+import { consumeRateLimit } from "@/lib/security/rate-limit";
 import { firstValidationError, registrationSchema } from "@/lib/validation";
 
 function registrationError(message: string): never {
@@ -38,6 +39,14 @@ export async function registerAction(formData: FormData) {
 
   if (!parsed.success) registrationError(firstValidationError(parsed.error));
   if (!databaseConfigured()) registrationError("Veritabanı bağlantısı henüz yapılandırılmadı.");
+
+  const rateLimit = await consumeRateLimit({
+    scope: "auth:register",
+    limit: 5,
+    windowMs: 15 * 60 * 1000,
+    identity: parsed.data.email,
+  });
+  if (!rateLimit.allowed) registrationError("Çok fazla kayıt denemesi yapıldı. Lütfen daha sonra tekrar deneyin.");
 
   const existingUser = await db.user.findUnique({ where: { email: parsed.data.email } });
   if (existingUser) registrationError("Bu e-posta adresiyle daha önce hesap oluşturulmuş.");
@@ -79,6 +88,6 @@ export async function registerAction(formData: FormData) {
     return createdUser;
   });
 
-  await createSession(user.id);
-  redirect("/hesabim");
+  const delivery = await sendVerificationEmail(user);
+  redirect(`/dogrulama-bekleniyor?delivery=${delivery.delivered ? "sent" : "pending"}`);
 }
