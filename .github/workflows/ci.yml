@@ -43,7 +43,13 @@ jobs:
           node-version: 22
           package-manager-cache: false
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        shell: bash
+        run: |
+          set +e
+          npm install --no-audit --no-fund > install.log 2>&1
+          status=$?
+          tail -n 120 install.log
+          exit $status
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high
       - name: Validate database schema
@@ -106,6 +112,7 @@ jobs:
         with:
           name: verification-logs
           path: |
+            install.log
             build.log
             migration-drift.log
           if-no-files-found: warn
