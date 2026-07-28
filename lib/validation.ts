@@ -90,6 +90,41 @@ export const agentMessageSchema = conversationOperationSchema.extend({
   message: z.string().trim().min(1, "Temsilci mesajı boş olamaz.").max(4_000, "Temsilci mesajı en fazla 4000 karakter olabilir."),
 });
 
+const cmsBaseSchema = z.object({
+  id: z.string().trim().max(100).optional().default(""),
+  slug: slugSchema,
+  title: z.string().trim().min(4, "Başlık en az 4 karakter olmalıdır.").max(180),
+  status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]),
+  seoTitle: z.string().trim().max(180).optional().default(""),
+  seoDescription: z.string().trim().max(320).optional().default(""),
+});
+
+export const cmsBlogSchema = cmsBaseSchema.extend({
+  category: z.string().trim().min(2).max(80),
+  excerpt: z.string().trim().min(20, "Özet en az 20 karakter olmalıdır.").max(400),
+  readingTime: z.string().trim().min(2).max(40),
+  content: z.string().trim().min(80, "Yazı içeriği en az 80 karakter olmalıdır.").max(50_000),
+});
+
+export const cmsCaseStudySchema = cmsBaseSchema.extend({
+  category: z.string().trim().min(2).max(100),
+  excerpt: z.string().trim().min(20).max(500),
+  problem: z.string().trim().min(20).max(5_000),
+  solution: z.string().trim().min(20).max(5_000),
+  technical: z.string().trim().min(20).max(10_000),
+  result: z.string().trim().min(20).max(5_000),
+  metrics: z.string().trim().min(2).max(1_000),
+});
+
+export const cmsFaqSchema = cmsBaseSchema.extend({
+  content: z.string().trim().min(10, "Yanıt en az 10 karakter olmalıdır.").max(5_000),
+  sortOrder: z.coerce.number().int().min(0).max(10_000),
+});
+
+export const cmsDeleteSchema = z.object({
+  id: z.string().trim().min(1).max(100),
+});
+
 export function firstValidationError(error: z.ZodError) {
   return error.issues[0]?.message ?? "Gönderilen bilgiler geçerli değil.";
 }
