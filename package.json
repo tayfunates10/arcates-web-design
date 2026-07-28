@@ -1,6 +1,6 @@
 {
   "name": "arcates-web-design",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
@@ -10,6 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/**/*.test.ts",
     "check": "npm run db:validate && npm test && npm run typecheck && npm run build",
+    "release:check": "npm run check && bash -n ops/*.sh",
+    "smoke": "bash ops/smoke-test.sh",
     "db:generate": "prisma generate",
     "db:validate": "prisma validate",
     "db:push": "prisma db push",
