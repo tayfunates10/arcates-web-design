@@ -84,6 +84,7 @@ model User {
   supportTickets     SupportTicket[]
   auditLogs          AuditLog[]                @relation("AuditActor")
   channelConnections ChannelConnection[]
+  channelLinkCodes   ChannelLinkCode[]
 }
 
 model Session {
@@ -260,6 +261,20 @@ model ChannelConnection {
 
   @@unique([channel, externalIdentity])
   @@index([userId])
+}
+
+model ChannelLinkCode {
+  id         String              @id @default(cuid())
+  userId     String
+  channel    ConversationChannel
+  codeHash   String              @unique
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime            @default(now())
+  user       User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, channel, expiresAt])
+  @@index([expiresAt, consumedAt])
 }
 
 model SupportTicket {
