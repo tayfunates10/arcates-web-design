@@ -68,33 +68,50 @@ enum KnowledgeVisibility {
 }
 
 model User {
-  id                 String               @id @default(cuid())
-  email              String               @unique
-  phone              String?              @unique
+  id                 String                    @id @default(cuid())
+  email              String                    @unique
+  phone              String?                   @unique
   name               String
   passwordHash       String?
-  role               UserRole             @default(CUSTOMER)
+  role               UserRole                  @default(CUSTOMER)
   emailVerifiedAt    DateTime?
-  createdAt          DateTime             @default(now())
-  updatedAt          DateTime             @updatedAt
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+  sessions           Session[]
   memberships        OrganizationMember[]
   projectMemberships ProjectMember[]
   conversations      ConversationParticipant[]
   supportTickets     SupportTicket[]
-  auditLogs          AuditLog[]            @relation("AuditActor")
+  auditLogs          AuditLog[]                @relation("AuditActor")
   channelConnections ChannelConnection[]
 }
 
+model Session {
+  id         String    @id @default(cuid())
+  userId     String
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  lastSeenAt DateTime  @default(now())
+  revokedAt  DateTime?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime  @default(now())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@index([expiresAt, revokedAt])
+}
+
 model Organization {
-  id            String               @id @default(cuid())
-  name          String
-  slug          String               @unique
-  createdAt     DateTime             @default(now())
-  updatedAt     DateTime             @updatedAt
-  members       OrganizationMember[]
-  contacts      Contact[]
-  projects      Project[]
-  conversations Conversation[]
+  id             String               @id @default(cuid())
+  name           String
+  slug           String               @unique
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  members        OrganizationMember[]
+  contacts       Contact[]
+  projects       Project[]
+  conversations  Conversation[]
   supportTickets SupportTicket[]
 }
 
@@ -131,34 +148,34 @@ model Contact {
 }
 
 model Lead {
-  id          String    @id @default(cuid())
+  id          String   @id @default(cuid())
   contactId   String
   title       String
   description String
   service     String?
   budget      Int?
-  status      String    @default("NEW")
+  status      String   @default("NEW")
   source      String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  contact     Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  contact     Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
 
   @@index([status, createdAt])
 }
 
 model Project {
-  id             String          @id @default(cuid())
+  id             String              @id @default(cuid())
   organizationId String
   name           String
-  slug           String          @unique
+  slug           String              @unique
   description    String?
-  status         ProjectStatus   @default(DISCOVERY)
-  progress       Int             @default(0)
+  status         ProjectStatus       @default(DISCOVERY)
+  progress       Int                 @default(0)
   startedAt      DateTime?
   targetDate     DateTime?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   members        ProjectMember[]
   conversations  Conversation[]
   supportTickets SupportTicket[]
@@ -181,20 +198,20 @@ model ProjectMember {
 }
 
 model Conversation {
-  id             String                @id @default(cuid())
+  id             String                    @id @default(cuid())
   organizationId String?
   projectId      String?
   contactId      String?
   channel        ConversationChannel
   externalId     String?
-  status         ConversationStatus    @default(AI_ACTIVE)
+  status         ConversationStatus        @default(AI_ACTIVE)
   assignedUserId String?
-  createdAt      DateTime              @default(now())
-  updatedAt      DateTime              @updatedAt
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @updatedAt
   closedAt       DateTime?
-  organization   Organization?         @relation(fields: [organizationId], references: [id], onDelete: SetNull)
-  project        Project?              @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  contact        Contact?              @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  organization   Organization?             @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  project        Project?                  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  contact        Contact?                  @relation(fields: [contactId], references: [id], onDelete: SetNull)
   participants   ConversationParticipant[]
   messages       Message[]
   supportTickets SupportTicket[]
@@ -231,15 +248,15 @@ model Message {
 }
 
 model ChannelConnection {
-  id                 String              @id @default(cuid())
-  userId             String?
-  channel            ConversationChannel
-  externalIdentity   String
-  verifiedAt         DateTime?
-  revokedAt          DateTime?
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
-  user               User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+  id               String              @id @default(cuid())
+  userId           String?
+  channel          ConversationChannel
+  externalIdentity String
+  verifiedAt       DateTime?
+  revokedAt        DateTime?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  user             User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@unique([channel, externalIdentity])
   @@index([userId])
