@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 enum UserRole {
@@ -369,14 +368,14 @@ model AuditLog {
 }
 
 model RateLimitBucket {
-  id          String   @id @default(cuid())
+  id           String   @id @default(cuid())
   identityHash String
-  scope       String
-  windowStart DateTime
-  count       Int      @default(1)
-  expiresAt   DateTime
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  scope        String
+  windowStart  DateTime
+  count        Int      @default(1)
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@unique([identityHash, scope, windowStart])
   @@index([expiresAt])

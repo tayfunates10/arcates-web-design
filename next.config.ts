@@ -11,6 +11,9 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   output: "standalone",
+  experimental: {
+    useTypeScriptCli: true,
+  },
   images: {
     formats: ["image/avif", "image/webp"],
   },
