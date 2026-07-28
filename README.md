@@ -67,6 +67,14 @@ OPENAI_MODEL=
 
 Anahtar veya model tanımlı değilse chatbot çalışmaya devam eder ve doğrulanmış kural motorunu kullanır. Model çağrıları yalnızca sunucudan yapılır ve API isteğinde saklama kapatılır.
 
+Chatbotun çalışma sırası:
+
+1. Kullanıcının erişim düzeyine uygun bilgi tabanı kayıtları seçilir.
+2. En ilgili kayıtlar yanıt bağlamına eklenir.
+3. OpenAI yapılandırılmışsa temellendirilmiş yanıt istenir.
+4. Model çağrısı başarısızsa kural motoru devreye girer.
+5. Yanıtın kaynağı ve kullanılan bilgi başlıkları mesaj metadata alanına yazılır.
+
 ## WhatsApp Cloud API yapılandırması
 
 ```env
@@ -84,6 +92,15 @@ Webhook adresi:
 ```
 
 Gelen webhook isteklerinde `x-hub-signature-256` doğrulaması zorunludur. Her mesaj önce idempotency event store'a yazılır, daha sonra ortak konuşma ve mesaj tablolarına işlenir.
+
+WhatsApp mesaj akışı:
+
+1. Webhook imzası doğrulanır.
+2. Mesaj kimliği daha önce işlenmiş mi kontrol edilir.
+3. Telefon numarası mevcut kullanıcı bağlantısıyla eşleştirilir.
+4. Web chatbotuyla aynı konuşma motoru çalıştırılır.
+5. Çıkış mesajı Cloud API üzerinden gönderilir.
+6. Gelen ve giden mesajlar aynı konuşma kaydında tutulur.
 
 ## Kalite kontrolleri
 
