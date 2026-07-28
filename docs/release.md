@@ -22,7 +22,7 @@ Bu belge, doğrulanmış bir Arcates sürümünün GitHub Container Registry'ye 
 - Alan adına yönlendirilmiş DNS kaydı
 - Paket private ise yalnızca `read:packages` yetkili GHCR tokenı
 
-Repository ayarlarında `ARCATES_SITE_URL` Actions değişkeni tanımlanabilir. Tanımlanmazsa release imajının canonical, sitemap ve Open Graph URL'leri için `https://arcates.com` kullanılır.
+Repository ayarlarında `ARCATES_SITE_URL` Actions değişkeni zorunlu olarak tanımlanmalıdır. Değer, sahip olunan üretim alan adının yalnızca HTTPS origin biçimi olmalıdır; örneğin `https://www.example.com`. Path, query, fragment, kullanıcı bilgisi, özel port, trailing slash, localhost veya private IP kabul edilmez. Değişken yoksa release iş akışı imaj üretmeden durur.
 
 ## Yayın öncesi kontrol
 
@@ -37,6 +37,7 @@ Aşağıdaki koşullar sağlanmalıdır:
 - Üretim bağımlılığı audit kapısı yüksek veya kritik açık göstermiyor
 - CodeQL taraması kritik açık içermiyor veya private repository nedeniyle çalışmıyorsa eşdeğer inceleme tamamlanmış
 - Sürüm numarası `package.json` içinde güncel
+- `ARCATES_SITE_URL` gerçek ve sahip olunan üretim origin değerine ayarlanmış
 - Yeni migration varsa temiz PostgreSQL üzerinde uygulanmış
 - E-posta, OpenAI ve WhatsApp yapılandırma değişiklikleri belgelenmiş
 - Geri dönüşte kullanılacak önceki çalışan sürüm etiketi kaydedilmiş
@@ -106,7 +107,7 @@ Deploy scripti sırasıyla:
 ## Canlı smoke testi
 
 ```bash
-BASE_URL=https://arcates.com \
+BASE_URL="$ARCATES_SITE_URL" \
 METRICS_TOKEN="$METRICS_TOKEN" \
 bash ops/smoke-test.sh
 ```
@@ -137,7 +138,7 @@ bash ops/rollback-release.sh 0.3.0
 Rollback sonrası smoke testi yeniden çalıştırılır:
 
 ```bash
-BASE_URL=https://arcates.com bash ops/smoke-test.sh
+BASE_URL="$ARCATES_SITE_URL" bash ops/smoke-test.sh
 ```
 
 Önceki sürüm yeni şemayla uyumlu değilse otomatik rollback yapılmaz. Düzeltme sürümü hazırlanır veya hukuk ve operasyon onayıyla doğrulanmış yedekten kontrollü geri yükleme planı uygulanır.
