@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CheckIcon } from "@/components/icons";
+import { WhatsAppLinkCard } from "@/components/whatsapp-link-card";
 import { requireUser } from "@/lib/auth/session";
 import { db } from "@/lib/db";
 
@@ -61,9 +62,10 @@ export default async function CustomerDashboardPage() {
             <Link href="/hesabim#projeler"><span>02</span>Projelerim</Link>
             <Link href="/hesabim#destek"><span>03</span>Destek Talepleri</Link>
             <Link href="/hesabim#konusmalar"><span>04</span>Konuşmalar</Link>
-            <Link href="/destek/bilgi-merkezi"><span>05</span>Bilgi Merkezi</Link>
+            <Link href="/hesabim#kanallar"><span>05</span>Kanal Bağlantıları</Link>
+            <Link href="/destek/bilgi-merkezi"><span>06</span>Bilgi Merkezi</Link>
           </nav>
-          <form action="/cikis" method="post"><button type="submit"><span>06</span>Güvenli Çıkış</button></form>
+          <form action="/cikis" method="post"><button type="submit"><span>07</span>Güvenli Çıkış</button></form>
         </aside>
 
         <div className="portal-main">
@@ -117,6 +119,8 @@ export default async function CustomerDashboardPage() {
               </div>
             )) : <EmptyState title="Henüz konuşma yok" text="Chatbot görüşmeleriniz hesabınızla eşleştirildiğinde burada listelenecek." />}
           </section>
+
+          <div id="kanallar"><WhatsAppLinkCard /></div>
         </div>
       </div>
     </main>
