@@ -50,7 +50,7 @@ export async function GET(request: Request) {
       db.project.count({ where: { status: { notIn: ["PAUSED", "COMPLETED"] } } }),
       db.supportTicket.count({ where: { status: { notIn: ["RESOLVED", "CLOSED"] } } }),
       db.conversation.count({ where: { status: "WAITING" } }),
-      db.webhookEvent.count({ where: { failedAt: { not: null }, processedAt: null } }),
+      db.webhookEvent.count({ where: { provider: "WHATSAPP", failedAt: { not: null }, processedAt: null } }),
       db.rateLimitBucket.count({ where: { expiresAt: { gt: now } } }),
     ]);
     const duration = Math.round((performance.now() - startedAt) * 1000) / 1000;
@@ -62,7 +62,7 @@ export async function GET(request: Request) {
       metric("arcates_projects_active", "Projects not paused or completed", activeProjects),
       metric("arcates_support_tickets_open", "Support tickets not resolved or closed", openTickets),
       metric("arcates_conversations_waiting", "Conversations waiting for a human agent", waitingConversations),
-      metric("arcates_webhook_failures", "Webhook events that failed before processing", failedWebhooks),
+      metric("arcates_webhook_failures", "WhatsApp webhook events that failed before processing", failedWebhooks),
       metric("arcates_rate_limit_buckets_active", "Active rate limit buckets", activeRateLimitBuckets),
     ].join("\n");
 
