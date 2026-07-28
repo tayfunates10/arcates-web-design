@@ -44,6 +44,8 @@ jobs:
           package-manager-cache: false
       - name: Install dependencies
         run: npm install --no-audit --no-fund
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
       - name: Validate database schema
         run: npm run db:validate
       - name: Deploy migrations to clean PostgreSQL
@@ -92,7 +94,12 @@ jobs:
       - name: Build migration container
         run: docker build --target migrate -t arcates-migrate:ci .
       - name: Build application container
-        run: docker build --target runner -t arcates-web:ci .
+        run: >-
+          docker build
+          --target runner
+          --build-arg NEXT_PUBLIC_SITE_URL=http://localhost:3000
+          --build-arg APP_VERSION=ci-${GITHUB_SHA::12}
+          -t arcates-web:ci .
       - name: Upload verification logs
         if: always()
         uses: actions/upload-artifact@v7
