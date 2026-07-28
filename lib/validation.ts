@@ -82,6 +82,14 @@ export const ticketManagementSchema = z.object({
   priority: z.enum(["LOW", "NORMAL", "HIGH", "URGENT"]),
 });
 
+export const conversationOperationSchema = z.object({
+  conversationId: z.string().trim().min(1, "Konuşma seçilmelidir.").max(100),
+});
+
+export const agentMessageSchema = conversationOperationSchema.extend({
+  message: z.string().trim().min(1, "Temsilci mesajı boş olamaz.").max(4_000, "Temsilci mesajı en fazla 4000 karakter olabilir."),
+});
+
 export function firstValidationError(error: z.ZodError) {
   return error.issues[0]?.message ?? "Gönderilen bilgiler geçerli değil.";
 }
