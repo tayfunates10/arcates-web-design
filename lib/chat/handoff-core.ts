@@ -3,7 +3,7 @@ const handoffPatterns = [
   /\binsan deste(?:ğ|g)i\b/i,
   /\byetkili(?:ye)? bağlan\b/i,
   /\bmüşteri temsilcisi\b/i,
-  /\bcanlı destek\b/i,
+  /\bcanlı deste(?:k|ğ)(?:e)?\b/i,
   /\buzman(?:a)? bağlan\b/i,
 ];
 
