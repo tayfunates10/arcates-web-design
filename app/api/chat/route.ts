@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth/session";
 import { handleAccountChatAction } from "@/lib/chat/account-tools";
 import { generateAssistantReply } from "@/lib/chat/engine";
+import { handoffAcknowledgement, requestsHumanHandoff } from "@/lib/chat/handoff";
 import { databaseConfigured, db } from "@/lib/db";
 import { chatMessageSchema, firstValidationError } from "@/lib/validation";
 
@@ -25,7 +26,7 @@ export async function POST(request: Request) {
 
   if (!databaseConfigured()) {
     const assistant = await generateAssistantReply({ message: parsed.data.message, channel: "WEB" });
-    return NextResponse.json({ reply: assistant.text, persisted: false, source: assistant.source });
+    return NextResponse.json({ reply: assistant.text, persisted: false, source: assistant.source, status: "AI_ACTIVE" });
   }
 
   try {
@@ -35,11 +36,18 @@ export async function POST(request: Request) {
     const guestId = user ? null : existingGuestId ?? randomUUID();
     const externalId = user ? `web:user:${user.id}` : `web:guest:${guestId}`;
 
-    const conversation = await db.conversation.upsert({
+    let conversation = await db.conversation.upsert({
       where: { channel_externalId: { channel: "WEB", externalId } },
-      update: { status: "AI_ACTIVE" },
+      update: {},
       create: { channel: "WEB", externalId, status: "AI_ACTIVE" },
     });
+
+    if (conversation.status === "CLOSED") {
+      conversation = await db.conversation.update({
+        where: { id: conversation.id },
+        data: { status: "AI_ACTIVE", closedAt: null, assignedUserId: null },
+      });
+    }
 
     if (user) {
       await db.conversationParticipant.upsert({
@@ -49,48 +57,68 @@ export async function POST(request: Request) {
       });
     }
 
-    const assistant = user
-      ? await handleAccountChatAction({
-          message: parsed.data.message,
-          userId: user.id,
-          conversationId: conversation.id,
-        }) ?? await generateAssistantReply({
-          message: parsed.data.message,
-          channel: "WEB",
-          userId: user.id,
-        })
-      : await generateAssistantReply({
-          message: parsed.data.message,
-          channel: "WEB",
-        });
+    let assistant: { text: string; source: string; knowledgeTitles: string[] } | null = null;
+    let finalStatus = conversation.status;
 
-    await db.$transaction([
+    if (conversation.status === "AI_ACTIVE" && requestsHumanHandoff(parsed.data.message)) {
+      const updated = await db.conversation.update({
+        where: { id: conversation.id },
+        data: { status: "WAITING", assignedUserId: null, closedAt: null },
+      });
+      finalStatus = updated.status;
+      assistant = handoffAcknowledgement();
+    } else if (conversation.status === "AI_ACTIVE") {
+      assistant = user
+        ? await handleAccountChatAction({
+            message: parsed.data.message,
+            userId: user.id,
+            conversationId: conversation.id,
+          }) ?? await generateAssistantReply({
+            message: parsed.data.message,
+            channel: "WEB",
+            userId: user.id,
+          })
+        : await generateAssistantReply({
+            message: parsed.data.message,
+            channel: "WEB",
+          });
+    }
+
+    const writes = [
       db.message.create({
         data: {
           conversationId: conversation.id,
-          role: "USER",
+          role: "USER" as const,
           content: parsed.data.message,
           metadata: { source: "WEB_WIDGET" },
         },
       }),
-      db.message.create({
+    ];
+
+    if (assistant) {
+      writes.push(db.message.create({
         data: {
           conversationId: conversation.id,
-          role: "ASSISTANT",
+          role: "ASSISTANT" as const,
           content: assistant.text,
           metadata: {
             source: assistant.source,
             knowledgeTitles: assistant.knowledgeTitles,
           },
         },
-      }),
-    ]);
+      }));
+    }
+
+    await db.$transaction(writes);
 
     const response = NextResponse.json({
-      reply: assistant.text,
+      reply: assistant?.text ?? null,
       conversationId: conversation.id,
       persisted: true,
-      source: assistant.source,
+      source: assistant?.source ?? "HUMAN_CONVERSATION_PENDING",
+      status: finalStatus,
+      waiting: finalStatus === "WAITING",
+      humanActive: finalStatus === "HUMAN_ACTIVE",
     });
 
     if (guestId && !existingGuestId) {
