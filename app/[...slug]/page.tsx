@@ -36,31 +36,31 @@ export default async function CatchAllPage({ params }: PageProps) {
   const { slug } = await params;
   const path = cleanPath(slug);
 
-  if (path === "web-cozumleri") return <SolutionsPage />;
+  if (path === "web-cozumleri") return <main><SolutionsPage /></main>;
   if (path.startsWith("web-cozumleri/")) {
     const service = services.find((item) => item.slug === slug[1]);
-    return service ? <ServiceDetail service={service} /> : notFound();
+    return service ? <main><ServiceDetail service={service} /></main> : notFound();
   }
-  if (path === "projelerimiz") return <ProjectsPage projects={await getPublishedCaseStudies()} />;
+  if (path === "projelerimiz") return <main><ProjectsPage projects={await getPublishedCaseStudies()} /></main>;
   if (path.startsWith("projelerimiz/")) {
     const project = await getPublishedCaseStudy(slug[1]);
-    return project ? <ProjectDetail project={project} /> : notFound();
+    return project ? <main><ProjectDetail project={project} /></main> : notFound();
   }
-  if (path === "blog") return <BlogPage posts={await getPublishedBlogPosts()} />;
+  if (path === "blog") return <main><BlogPage posts={await getPublishedBlogPosts()} /></main>;
   if (path.startsWith("blog/")) {
     const post = await getPublishedBlogPost(slug[1]);
-    return post ? <BlogDetail post={post} /> : notFound();
+    return post ? <main><BlogDetail post={post} /></main> : notFound();
   }
-  if (path === "sss") return <FaqPage items={await getPublishedFaqItems()} />;
-  if (path === "hesabim") return <AccountPreview />;
-  if (path === "admin") return <AdminPreview />;
+  if (path === "sss") return <main><FaqPage items={await getPublishedFaqItems()} /></main>;
+  if (path === "hesabim") return <main><AccountPreview /></main>;
+  if (path === "admin") return <main><AdminPreview /></main>;
   if (["destek/bilgi-merkezi", "destek/destek-talebi", "destek/sistem-durumu", "destek/uzaktan-destek"].includes(path)) {
-    return <SupportSubPage path={path} />;
+    return <main><SupportSubPage path={path} /></main>;
   }
-  if (["gizlilik-politikasi", "cerez-politikasi", "kullanim-kosullari", "kvkk"].includes(path)) return <LegalPage path={path} />;
+  if (["gizlilik-politikasi", "cerez-politikasi", "kullanim-kosullari", "kvkk"].includes(path)) return <main><LegalPage path={path} /></main>;
 
   const generic = genericPages[path] ?? genericPages[slug[0]];
-  return generic ? <GenericPage page={generic} path={path} /> : notFound();
+  return generic ? <main><GenericPage page={generic} path={path} /></main> : notFound();
 }
 
 function pageTitle(path: string) {
