@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth/session";
+import { handleAccountChatAction } from "@/lib/chat/account-tools";
 import { generateAssistantReply } from "@/lib/chat/engine";
 import { databaseConfigured, db } from "@/lib/db";
 import { chatMessageSchema, firstValidationError } from "@/lib/validation";
@@ -22,18 +23,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: firstValidationError(parsed.error) }, { status: 422 });
   }
 
-  const user = databaseConfigured() ? await getCurrentUser() : null;
-  const assistant = await generateAssistantReply({
-    message: parsed.data.message,
-    channel: "WEB",
-    userId: user?.id,
-  });
-
   if (!databaseConfigured()) {
+    const assistant = await generateAssistantReply({ message: parsed.data.message, channel: "WEB" });
     return NextResponse.json({ reply: assistant.text, persisted: false, source: assistant.source });
   }
 
   try {
+    const user = await getCurrentUser();
     const cookieStore = await cookies();
     const existingGuestId = cookieStore.get(GUEST_COOKIE)?.value;
     const guestId = user ? null : existingGuestId ?? randomUUID();
@@ -52,6 +48,21 @@ export async function POST(request: Request) {
         create: { conversationId: conversation.id, userId: user.id },
       });
     }
+
+    const assistant = user
+      ? await handleAccountChatAction({
+          message: parsed.data.message,
+          userId: user.id,
+          conversationId: conversation.id,
+        }) ?? await generateAssistantReply({
+          message: parsed.data.message,
+          channel: "WEB",
+          userId: user.id,
+        })
+      : await generateAssistantReply({
+          message: parsed.data.message,
+          channel: "WEB",
+        });
 
     await db.$transaction([
       db.message.create({
@@ -94,7 +105,7 @@ export async function POST(request: Request) {
 
     return response;
   } catch (error) {
-    console.error("Chat persistence failed", error);
-    return NextResponse.json({ reply: assistant.text, persisted: false, source: assistant.source });
+    console.error("Chat request failed", error);
+    return NextResponse.json({ error: "Sohbet isteği şu anda işlenemedi." }, { status: 500 });
   }
 }
