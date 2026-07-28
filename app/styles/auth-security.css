@@ -1,0 +1,8 @@
+.auth-inline-link { margin-top: 12px; font-size: .73rem; }
+.auth-inline-link a { color: var(--accent-cyan); font-weight: 650; }
+.auth-inline-link a:hover { color: var(--text-primary); }
+.auth-inline-link--right { margin-top: -6px; text-align: right; }
+
+@media (max-width: 560px) {
+  .auth-inline-link--right { text-align: left; }
+}
