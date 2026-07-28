@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { extractArcatesLinkCode, consumeChannelLinkCode } from "@/lib/channels/link-code";
 import { handleAccountChatAction } from "@/lib/chat/account-tools";
 import { generateAssistantReply } from "@/lib/chat/engine";
+import { handoffAcknowledgement, requestsHumanHandoff } from "@/lib/chat/handoff";
 import { databaseConfigured, db } from "@/lib/db";
 import { sendWhatsAppText, whatsappConfigured } from "@/lib/whatsapp/client";
 
@@ -39,6 +40,12 @@ type WhatsAppPayload = {
       };
     }>;
   }>;
+};
+
+type AssistantReply = {
+  text: string;
+  source: string;
+  knowledgeTitles: string[];
 };
 
 export async function GET(request: Request) {
@@ -148,12 +155,11 @@ async function processIncomingMessage(message: WhatsAppMessage, profileName?: st
       select: { organizationId: true },
     }) : null;
 
-    const conversation = await db.conversation.upsert({
+    let conversation = await db.conversation.upsert({
       where: { channel_externalId: { channel: "WHATSAPP", externalId: `whatsapp:${message.from}` } },
       update: {
         contactId: contact.id,
         organizationId: membership?.organizationId ?? undefined,
-        status: "AI_ACTIVE",
       },
       create: {
         channel: "WHATSAPP",
@@ -163,6 +169,13 @@ async function processIncomingMessage(message: WhatsAppMessage, profileName?: st
         status: "AI_ACTIVE",
       },
     });
+
+    if (conversation.status === "CLOSED") {
+      conversation = await db.conversation.update({
+        where: { id: conversation.id },
+        data: { status: "AI_ACTIVE", closedAt: null, assignedUserId: null },
+      });
+    }
 
     if (linkedUserId) {
       await db.conversationParticipant.upsert({
@@ -184,58 +197,70 @@ async function processIncomingMessage(message: WhatsAppMessage, profileName?: st
       },
     });
 
-    const assistant = linkCode
-      ? linkResult
+    let assistant: AssistantReply | null = null;
+
+    if (linkCode) {
+      assistant = linkResult
         ? {
             text: "WhatsApp numaranız Arcates hesabınızla güvenli biçimde eşleştirildi. Bundan sonraki hesap ve proje sorgularında doğrulanmış kullanıcı bağlamı kullanılabilir.",
             source: "CHANNEL_LINK_VERIFIED",
-            knowledgeTitles: [] as string[],
+            knowledgeTitles: [],
           }
         : {
             text: "Bağlantı kodu geçersiz, kullanılmış veya süresi dolmuş. Arcates müşteri panelinden yeni bir kod oluşturup tekrar gönderin.",
             source: "CHANNEL_LINK_REJECTED",
-            knowledgeTitles: [] as string[],
-          }
-      : incomingText && linkedUserId
-        ? await handleAccountChatAction({
-            message: incomingText,
-            userId: linkedUserId,
-            conversationId: conversation.id,
-          }) ?? await generateAssistantReply({
-            message: incomingText,
-            channel: "WHATSAPP",
-            userId: linkedUserId,
-          })
-        : incomingText
-          ? await generateAssistantReply({ message: incomingText, channel: "WHATSAPP" })
-          : {
-              text: "Bu mesaj türünü şu anda otomatik olarak işleyemiyorum. Talebinizi metin olarak gönderirseniz çözüm kapsamını belirleyebilirim.",
-              source: "UNSUPPORTED_MESSAGE_FALLBACK",
-              knowledgeTitles: [] as string[],
-            };
-
-    let outboundMessageId: string | null = null;
-    if (whatsappConfigured()) {
-      outboundMessageId = await sendWhatsAppText({
-        to: message.from,
-        body: assistant.text,
-        replyToMessageId: message.id,
+            knowledgeTitles: [],
+          };
+    } else if (conversation.status === "AI_ACTIVE" && incomingText && requestsHumanHandoff(incomingText)) {
+      await db.conversation.update({
+        where: { id: conversation.id },
+        data: { status: "WAITING", assignedUserId: null, closedAt: null },
       });
+      assistant = handoffAcknowledgement();
+    } else if (conversation.status === "AI_ACTIVE" && incomingText && linkedUserId) {
+      assistant = await handleAccountChatAction({
+        message: incomingText,
+        userId: linkedUserId,
+        conversationId: conversation.id,
+      }) ?? await generateAssistantReply({
+        message: incomingText,
+        channel: "WHATSAPP",
+        userId: linkedUserId,
+      });
+    } else if (conversation.status === "AI_ACTIVE" && incomingText) {
+      assistant = await generateAssistantReply({ message: incomingText, channel: "WHATSAPP" });
+    } else if (conversation.status === "AI_ACTIVE" && !incomingText) {
+      assistant = {
+        text: "Bu mesaj türünü şu anda otomatik olarak işleyemiyorum. Talebinizi metin olarak gönderirseniz çözüm kapsamını belirleyebilirim.",
+        source: "UNSUPPORTED_MESSAGE_FALLBACK",
+        knowledgeTitles: [],
+      };
     }
 
-    await db.message.create({
-      data: {
-        conversationId: conversation.id,
-        externalId: outboundMessageId,
-        role: "ASSISTANT",
-        content: assistant.text,
-        metadata: {
-          source: assistant.source,
-          knowledgeTitles: assistant.knowledgeTitles,
-          delivery: outboundMessageId ? "SENT" : "NOT_CONFIGURED",
+    if (assistant) {
+      let outboundMessageId: string | null = null;
+      if (whatsappConfigured()) {
+        outboundMessageId = await sendWhatsAppText({
+          to: message.from,
+          body: assistant.text,
+          replyToMessageId: message.id,
+        });
+      }
+
+      await db.message.create({
+        data: {
+          conversationId: conversation.id,
+          externalId: outboundMessageId,
+          role: "ASSISTANT",
+          content: assistant.text,
+          metadata: {
+            source: assistant.source,
+            knowledgeTitles: assistant.knowledgeTitles,
+            delivery: outboundMessageId ? "SENT" : "NOT_CONFIGURED",
+          },
         },
-      },
-    });
+      });
+    }
 
     await db.webhookEvent.update({ where: { id: event.id }, data: { processedAt: new Date(), failedAt: null } });
   } catch (error) {
