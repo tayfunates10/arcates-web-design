@@ -1,0 +1,26 @@
+{
+  email {$ACME_EMAIL}
+  admin off
+}
+
+{$ARCATES_DOMAIN} {
+  encode zstd gzip
+
+  reverse_proxy web:3000 {
+    health_uri /api/health
+    health_interval 20s
+    health_timeout 5s
+  }
+
+  header {
+    -Server
+    Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+    X-Content-Type-Options "nosniff"
+    Referrer-Policy "strict-origin-when-cross-origin"
+  }
+
+  log {
+    output stdout
+    format json
+  }
+}
