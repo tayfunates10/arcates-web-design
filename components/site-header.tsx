@@ -66,7 +66,7 @@ export function SiteHeader() {
           <button type="button" className="icon-button desktop-only" aria-label="Site içinde ara">
             <SearchIcon size={20} />
           </button>
-          <Link href="/hesabim" className="header-login desktop-only"><UserIcon size={19} /> Giriş Yap</Link>
+          <Link href="/giris" className="header-login desktop-only"><UserIcon size={19} /> Giriş Yap</Link>
           <Link href="/teklif-al" className="button button--primary desktop-only">Projenizi Başlatın</Link>
           <button
             type="button"
@@ -93,7 +93,7 @@ export function SiteHeader() {
             ))}
           </div>
           <div className="mobile-nav__actions">
-            <Link href="/hesabim" className="button button--secondary" onClick={() => setOpen(false)}>Giriş Yap</Link>
+            <Link href="/giris" className="button button--secondary" onClick={() => setOpen(false)}>Giriş Yap</Link>
             <Link href="/teklif-al" className="button button--primary" onClick={() => setOpen(false)}>Projenizi Başlatın</Link>
           </div>
         </nav>
