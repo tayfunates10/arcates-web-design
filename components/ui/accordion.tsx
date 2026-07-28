@@ -35,9 +35,7 @@ export function Accordion({ items, defaultOpen = 0, className = "" }: AccordionP
                 aria-controls={panelId}
                 onClick={() => setOpenIndex(open ? null : index)}
               >
-                <span className="premium-accordion__icon" aria-hidden="true">
-                  <span />
-                </span>
+                <span className="premium-accordion__icon" aria-hidden="true"><span /></span>
                 <span>{item.title}</span>
                 <ChevronDownIcon className="premium-accordion__chevron" size={18} />
               </button>
@@ -46,8 +44,8 @@ export function Accordion({ items, defaultOpen = 0, className = "" }: AccordionP
               id={panelId}
               role="region"
               aria-labelledby={buttonId}
+              aria-hidden={!open}
               className="premium-accordion__panel"
-              hidden={!open}
             >
               <div><p>{item.content}</p></div>
             </div>
