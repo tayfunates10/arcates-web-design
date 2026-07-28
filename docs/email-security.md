@@ -21,7 +21,7 @@ EMAIL_REPLY_TO=destek@arcates.com
 4. Ham token yalnızca doğrulama bağlantısında kullanılır.
 5. Veritabanında tokenın SHA-256 özeti, kullanıcı kimliği ve 24 saatlik süre tutulur.
 6. Yeni doğrulama bağlantısı oluşturulduğunda önceki kullanılmamış bağlantılar iptal edilir.
-7. Bağlantı tüketildiğinde `emailVerifiedAt` alanı güncellenir ve kullanıcı için güvenli oturum oluşturulur.
+7. Token tüketimi, kullanıcı doğrulaması ve audit kaydı aynı PostgreSQL transaction’ında tamamlanır.
 8. Kullanılmış, iptal edilmiş veya süresi dolmuş token yeniden kullanılamaz.
 
 Doğrulanmamış müşteri hesapları giriş yapamaz. Yönetici seed hesabı oluşturulurken e-posta doğrulanmış olarak işaretlenir.
@@ -32,7 +32,7 @@ Doğrulanmamış müşteri hesapları giriş yapamaz. Yönetici seed hesabı olu
 2. E-posta bir hesapla eşleşiyorsa 30 dakika geçerli tek kullanımlık bağlantı gönderilir.
 3. Tokenın yalnızca SHA-256 özeti saklanır.
 4. Yeni parola güçlü parola kurallarından ve tekrar eşleşmesinden geçer.
-5. Token atomik olarak tüketilir.
+5. Token tüketimi, parola güncellemesi, oturum iptali ve audit kaydı aynı transaction içinde tamamlanır.
 6. Parola `scrypt` ve yeni rastgele tuz ile hashlenir.
 7. Kullanıcının önceki tüm oturumları iptal edilir.
 8. Yalnızca sıfırlama işlemini yapan cihaz için yeni oturum oluşturulur.
@@ -67,6 +67,6 @@ Sağlayıcı yapılandırılmamışsa:
 - Gönderen alanında SPF ve DKIM kayıtları doğrulanmalı
 - `EMAIL_REPLY_TO` gerçekten takip edilen bir adres olmalı
 - E-posta bağlantıları yalnızca HTTPS alan adına yönlenmeli
-- Proxy ve uygulama loglarında query parametrelerinin gereksiz saklanması engellenmeli
-- Parola veya token hiçbir log kaydına yazılmamalı
+- Varsayılan Caddy yapılandırmasında erişim logu kapalı tutulmalı; log açılacaksa doğrulama ve sıfırlama query parametreleri mutlaka maskelenmeli
+- Parola veya token hiçbir uygulama veya audit log kaydına yazılmamalı
 - E-posta teslimat hataları merkezi izleme sistemine aktarılmalı
