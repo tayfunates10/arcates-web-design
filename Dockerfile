@@ -9,6 +9,7 @@ RUN apt-get update \
 
 FROM base AS deps
 COPY package.json ./
+COPY prisma ./prisma
 RUN npm install --no-audit --no-fund
 
 FROM deps AS builder
