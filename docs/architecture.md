@@ -79,3 +79,7 @@ GitHub Actions sırasıyla şunları çalıştırır:
 4. Next.js production build
 
 Bu kontrollerden herhangi biri başarısızken değişiklik üretime hazır kabul edilmez.
+
+## Üretim operasyonları
+
+Kod ve şema dağıtıma hazır hale gelmiş olsa da gerçek servis bağlantıları hedef altyapıda tamamlanır. Canlı ortamda veritabanı migration yönetimi, secret store, hata izleme, oran sınırlama, yedekleme, WhatsApp üretim numarası aboneliği ve alan adı/HTTPS yapılandırması ayrı operasyon adımlarıdır. Bu işlemler yapılmadan sistem canlı müşteri verisiyle çalıştırılmamalıdır.
