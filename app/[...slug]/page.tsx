@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { BlogDetail, BlogPage, ProjectDetail, ProjectsPage } from "@/components/page-content";
+import { BlogDetail, BlogPage, FaqPage, ProjectDetail, ProjectsPage } from "@/components/page-content";
 import { AccountPreview, AdminPreview, GenericPage, LegalPage, SupportSubPage } from "@/components/page-general";
 import { ServiceDetail, SolutionsPage } from "@/components/page-solutions";
-import { blogPosts, genericPages, projects, services } from "@/lib/content";
+import { getPublishedBlogPost, getPublishedBlogPosts, getPublishedCaseStudies, getPublishedCaseStudy, getPublishedFaqItems } from "@/lib/cms/content";
+import { genericPages, services } from "@/lib/content";
 import { siteConfig } from "@/lib/site";
 
 type PageProps = { params: Promise<{ slug: string[] }> };
@@ -16,12 +17,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { slug } = await params;
   const path = cleanPath(slug);
   const service = path.startsWith("web-cozumleri/") ? services.find((item) => item.slug === slug[1]) : undefined;
-  const project = path.startsWith("projelerimiz/") ? projects.find((item) => item.slug === slug[1]) : undefined;
-  const post = path.startsWith("blog/") ? blogPosts.find((item) => item.slug === slug[1]) : undefined;
+  const project = path.startsWith("projelerimiz/") ? await getPublishedCaseStudy(slug[1]) : undefined;
+  const post = path.startsWith("blog/") ? await getPublishedBlogPost(slug[1]) : undefined;
   const generic = genericPages[path] ?? genericPages[slug[0]];
 
-  const title = service?.title ?? project?.title ?? post?.title ?? generic?.eyebrow ?? pageTitle(path);
-  const description = service?.description ?? project?.summary ?? post?.excerpt ?? generic?.description ?? siteConfig.description;
+  const title = service?.title ?? project?.seoTitle ?? project?.title ?? post?.seoTitle ?? post?.title ?? generic?.eyebrow ?? pageTitle(path);
+  const description = service?.description ?? project?.seoDescription ?? project?.summary ?? post?.seoDescription ?? post?.excerpt ?? generic?.description ?? siteConfig.description;
 
   return {
     title,
@@ -40,16 +41,17 @@ export default async function CatchAllPage({ params }: PageProps) {
     const service = services.find((item) => item.slug === slug[1]);
     return service ? <ServiceDetail service={service} /> : notFound();
   }
-  if (path === "projelerimiz") return <ProjectsPage />;
+  if (path === "projelerimiz") return <ProjectsPage projects={await getPublishedCaseStudies()} />;
   if (path.startsWith("projelerimiz/")) {
-    const project = projects.find((item) => item.slug === slug[1]);
+    const project = await getPublishedCaseStudy(slug[1]);
     return project ? <ProjectDetail project={project} /> : notFound();
   }
-  if (path === "blog") return <BlogPage />;
+  if (path === "blog") return <BlogPage posts={await getPublishedBlogPosts()} />;
   if (path.startsWith("blog/")) {
-    const post = blogPosts.find((item) => item.slug === slug[1]);
+    const post = await getPublishedBlogPost(slug[1]);
     return post ? <BlogDetail post={post} /> : notFound();
   }
+  if (path === "sss") return <FaqPage items={await getPublishedFaqItems()} />;
   if (path === "hesabim") return <AccountPreview />;
   if (path === "admin") return <AdminPreview />;
   if (["destek/bilgi-merkezi", "destek/destek-talebi", "destek/sistem-durumu", "destek/uzaktan-destek"].includes(path)) {
