@@ -13,6 +13,10 @@ COPY prisma ./prisma
 RUN npm install --no-audit --no-fund
 
 FROM deps AS builder
+ARG NEXT_PUBLIC_SITE_URL=https://arcates.com
+ARG APP_VERSION=development
+ENV NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}
+ENV APP_VERSION=${APP_VERSION}
 COPY . .
 RUN npm run build
 
@@ -24,9 +28,11 @@ COPY prisma ./prisma
 CMD ["npm", "run", "db:deploy"]
 
 FROM base AS runner
+ARG APP_VERSION=development
 ENV NODE_ENV=production
 ENV HOSTNAME=0.0.0.0
 ENV PORT=3000
+ENV APP_VERSION=${APP_VERSION}
 RUN groupadd --system --gid 1001 arcates \
   && useradd --system --uid 1001 --gid arcates --home-dir /app arcates
 COPY --from=builder /app/public ./public
