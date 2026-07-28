@@ -3,6 +3,8 @@ name: Full Usage QA
 on:
   push:
     branches: ["agent/full-usage-qa"]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
