@@ -4,6 +4,33 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 const KEY_LENGTH = 64;
 
+const knowledgeDocuments = [
+  {
+    slug: "arcates-web-cozumleri",
+    title: "Arcates web çözümleri",
+    visibility: "PUBLIC",
+    content: "Arcates; kurumsal web sitesi, e-ticaret sistemi, özel web yazılımı, SaaS geliştirme, yapay zekâ ve chatbot, iş otomasyonu, UI/UX tasarımı, SEO ve performans ile bakım ve teknik destek çözümleri sunar. Uygun çözüm, işletmenin hedefi, mevcut sistemi, kullanıcı rolleri, entegrasyon ihtiyacı ve teslim kriterleri analiz edilerek belirlenir. Kesin kapsam ve fiyat, ihtiyaç analizi yapılmadan verilmez.",
+  },
+  {
+    slug: "arcates-proje-sureci",
+    title: "Arcates proje süreci",
+    visibility: "PUBLIC",
+    content: "Arcates projeleri keşif ve ihtiyaç analizi, teknik planlama, kullanıcı deneyimi ve arayüz tasarımı, yazılım geliştirme, test ve optimizasyon, yayın ve izleme, bakım ve destek aşamalarından oluşur. Her aşamada ölçülebilir teslim kriterleri belirlenir. Teslim tarihi ve maliyet, proje kapsamı doğrulanmadan kesinleştirilmez.",
+  },
+  {
+    slug: "arcates-chatbot-guvenligi",
+    title: "Chatbot güvenlik ve yetki kuralları",
+    visibility: "PUBLIC",
+    content: "Arcates chatbotu genel ziyaretçilere hizmetleri, süreçleri ve doğrulanmış genel bilgileri açıklar. Proje durumu, destek kaydı, belge, teklif veya hesap bilgisi gibi özel veriler yalnızca güvenli giriş veya doğrulanmış kanal bağlantısı sonrasında kullanılabilir. Değişiklik yapan işlemler açık kullanıcı onayı ve sunucu tarafı yetkilendirme gerektirir. Chatbot doğrulanmamış fiyat, tarih veya işlem sonucu uydurmamalıdır.",
+  },
+  {
+    slug: "arcates-destek-politikasi",
+    title: "Arcates destek kaydı gereksinimleri",
+    visibility: "CUSTOMER",
+    content: "Destek taleplerinde gerçekleşen durum, beklenen sonuç, sorunu tekrar oluşturma adımları, etkilenen proje veya sayfa, kullanılan cihaz ve tarayıcı ile varsa hata mesajı belirtilmelidir. Destek talebi kullanıcı hesabına bağlanır, öncelik ve durum alanlarıyla izlenir. Acil öncelik yalnızca canlı sistemi veya kritik iş akışını durduran sorunlarda kullanılmalıdır.",
+  },
+];
+
 function deriveKey(password, salt) {
   return new Promise((resolve, reject) => {
     scrypt(password, salt, KEY_LENGTH, { N: 16_384, r: 8, p: 1, maxmem: 64 * 1024 * 1024 }, (error, key) => {
@@ -38,7 +65,24 @@ async function main() {
     create: { name, email, passwordHash, role: "OWNER", emailVerifiedAt: new Date() },
   });
 
+  for (const document of knowledgeDocuments) {
+    await prisma.knowledgeDocument.upsert({
+      where: { slug: document.slug },
+      update: {
+        title: document.title,
+        content: document.content,
+        visibility: document.visibility,
+        metadata: { source: "SYSTEM_SEED", reviewed: true },
+      },
+      create: {
+        ...document,
+        metadata: { source: "SYSTEM_SEED", reviewed: true },
+      },
+    });
+  }
+
   console.log(`Arcates owner hesabı hazır: ${owner.email}`);
+  console.log(`${knowledgeDocuments.length} doğrulanmış bilgi belgesi hazır.`);
 }
 
 main()
