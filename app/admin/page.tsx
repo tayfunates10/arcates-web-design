@@ -13,12 +13,13 @@ export const metadata: Metadata = {
 export default async function AdminDashboardPage() {
   const user = await requireRole(["STAFF", "ADMIN", "OWNER"]);
 
-  const [leadCount, activeProjectCount, openTicketCount, activeConversationCount, knowledgeCount, latestLeads, latestTickets, latestConversations] = await db.$transaction([
+  const [leadCount, activeProjectCount, openTicketCount, activeConversationCount, knowledgeCount, organizationCount, latestLeads, latestTickets, latestConversations] = await db.$transaction([
     db.lead.count({ where: { status: "NEW" } }),
     db.project.count({ where: { status: { notIn: ["PAUSED", "COMPLETED"] } } }),
     db.supportTicket.count({ where: { status: { notIn: ["RESOLVED", "CLOSED"] } } }),
     db.conversation.count({ where: { status: { in: ["AI_ACTIVE", "HUMAN_ACTIVE", "WAITING"] } } }),
     db.knowledgeDocument.count(),
+    db.organization.count(),
     db.lead.findMany({ orderBy: { createdAt: "desc" }, take: 5, include: { contact: true } }),
     db.supportTicket.findMany({ orderBy: { updatedAt: "desc" }, take: 5, include: { requester: true } }),
     db.conversation.findMany({
@@ -35,20 +36,21 @@ export default async function AdminDashboardPage() {
           <div className="portal-sidebar__brand">Arcates <span>Admin</span></div>
           <nav aria-label="Yönetim paneli">
             <Link className="active" href="/admin"><span>01</span>Dashboard</Link>
-            <Link href="/admin#talepler"><span>02</span>Potansiyel Müşteriler</Link>
-            <Link href="/admin#projeler"><span>03</span>Projeler</Link>
-            <Link href="/admin#destek"><span>04</span>Destek</Link>
-            <Link href="/admin#konusmalar"><span>05</span>Konuşmalar</Link>
-            <Link href="/admin/bilgi-tabani"><span>06</span>Bilgi Tabanı</Link>
-            <Link href="/"><span>07</span>Siteyi Görüntüle</Link>
+            <Link href="/admin/musteriler"><span>02</span>Müşteriler</Link>
+            <Link href="/admin/talepler"><span>03</span>Proje Talepleri</Link>
+            <Link href="/admin/projeler"><span>04</span>Projeler</Link>
+            <Link href="/admin/destek"><span>05</span>Destek</Link>
+            <Link href="/admin#konusmalar"><span>06</span>Konuşmalar</Link>
+            <Link href="/admin/bilgi-tabani"><span>07</span>Bilgi Tabanı</Link>
+            <Link href="/"><span>08</span>Siteyi Görüntüle</Link>
           </nav>
-          <form action="/cikis" method="post"><button type="submit"><span>08</span>Güvenli Çıkış</button></form>
+          <form action="/cikis" method="post"><button type="submit"><span>09</span>Güvenli Çıkış</button></form>
         </aside>
 
         <div className="portal-main">
           <header className="portal-main__header">
             <div>
-              <span className="eyebrow">{user.role} yetkisi</span>
+              <span className="eyebrow">{user.role} yetkisi · {organizationCount} kuruluş</span>
               <h1>Operasyon Paneli</h1>
               <p>{user.name} adına güvenli yönetim oturumu.</p>
             </div>
@@ -63,8 +65,7 @@ export default async function AdminDashboardPage() {
 
           <div className="portal-grid">
             <section id="talepler">
-              <span className="eyebrow">Satış hattı</span>
-              <h2>Son proje talepleri</h2>
+              <div className="portal-wide-card__header"><div><span className="eyebrow">Satış hattı</span><h2>Son proje talepleri</h2></div><Link className="text-link" href="/admin/talepler">Tümünü yönet</Link></div>
               {latestLeads.length ? latestLeads.map((lead) => (
                 <div className="conversation-row" key={lead.id}>
                   <i />
@@ -75,8 +76,7 @@ export default async function AdminDashboardPage() {
             </section>
 
             <section id="destek">
-              <span className="eyebrow">Destek hattı</span>
-              <h2>Son destek kayıtları</h2>
+              <div className="portal-wide-card__header"><div><span className="eyebrow">Destek hattı</span><h2>Son destek kayıtları</h2></div><Link className="text-link" href="/admin/destek">Tümünü yönet</Link></div>
               {latestTickets.length ? latestTickets.map((ticket) => (
                 <div className="health-row" key={ticket.id}>
                   <div><strong>{ticket.title}</strong><small>{ticket.requester.name}</small></div>
