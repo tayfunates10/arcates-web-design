@@ -108,6 +108,7 @@ jobs:
       - name: Run production smoke test
         env:
           BASE_URL: http://127.0.0.1:3000
+          ALLOW_HTTP: "true"
         run: bash ops/smoke-test.sh
 
       - name: Probe public pages and metadata
