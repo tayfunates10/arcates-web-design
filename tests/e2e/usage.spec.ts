@@ -5,6 +5,7 @@ const ownerPassword = process.env.ARCATES_OWNER_PASSWORD ?? "ArcatesQaOwner2026"
 const customerEmail = process.env.ARCATES_QA_CUSTOMER_EMAIL ?? "customer-qa@arcates.local";
 const customerPassword = process.env.ARCATES_QA_CUSTOMER_PASSWORD ?? "ArcatesQaCustomer2026";
 const metricsToken = process.env.METRICS_TOKEN ?? "arcates-qa-metrics-token";
+const qaOrigin = process.env.PLAYWRIGHT_BASE_URL ?? "https://127.0.0.1:3443";
 
 function monitorRuntimeErrors(page: Page) {
   const errors: string[] = [];
@@ -79,8 +80,6 @@ test("mobile navigation opens, closes and stays inside the viewport", async ({ p
 });
 
 test("public APIs reject malformed, cross-site and unauthorized requests", async ({ page }) => {
-  const baseURL = new URL(page.url() || "https://127.0.0.1:3443").origin;
-
   const crossSiteLead = await page.request.post("/api/leads", {
     headers: { origin: "https://attacker.invalid", "sec-fetch-site": "cross-site" },
     data: {
@@ -93,13 +92,13 @@ test("public APIs reject malformed, cross-site and unauthorized requests", async
   expect(crossSiteLead.status()).toBe(403);
 
   const invalidLead = await page.request.post("/api/leads", {
-    headers: { origin: baseURL },
+    headers: { origin: qaOrigin },
     data: { name: "Q", email: "invalid", description: "kısa", consent: false },
   });
   expect(invalidLead.status()).toBe(422);
 
   const unauthorizedSupport = await page.request.post("/api/support", {
-    headers: { origin: baseURL },
+    headers: { origin: qaOrigin },
     data: {
       title: "Yetkisiz destek",
       description: "Bu destek isteği giriş yapılmadan kabul edilmemelidir.",
