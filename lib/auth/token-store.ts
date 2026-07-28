@@ -1,6 +1,6 @@
 import "server-only";
 
-import { Prisma } from "@prisma/client";
+import { Prisma, type User } from "@prisma/client";
 import { db } from "@/lib/db";
 import {
   authTokenEventType,
@@ -36,12 +36,23 @@ export async function issueAuthToken(userId: string, kind: AuthTokenKind, ttlMs:
         payload: { userId, expiresAt: expiresAt.toISOString() } satisfies Prisma.InputJsonValue,
       },
     }),
+    db.webhookEvent.deleteMany({
+      where: {
+        provider: TOKEN_PROVIDER,
+        createdAt: { lt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
+        OR: [{ processedAt: { not: null } }, { failedAt: { not: null } }],
+      },
+    }),
   ]);
 
   return { token, expiresAt };
 }
 
-export async function consumeAuthToken(token: string, kind: AuthTokenKind) {
+export async function consumeAuthToken<T>(
+  token: string,
+  kind: AuthTokenKind,
+  onConsume: (transaction: Prisma.TransactionClient, user: User) => Promise<T>,
+) {
   const tokenHash = hashAuthToken(token);
 
   return db.$transaction(async (transaction) => {
@@ -69,12 +80,15 @@ export async function consumeAuthToken(token: string, kind: AuthTokenKind) {
       return null;
     }
 
+    const user = await transaction.user.findUnique({ where: { id: payload.userId } });
+    if (!user) return null;
+
     const consumed = await transaction.webhookEvent.updateMany({
       where: { id: record.id, processedAt: null, failedAt: null },
       data: { processedAt: new Date() },
     });
     if (consumed.count !== 1) return null;
 
-    return transaction.user.findUnique({ where: { id: payload.userId } });
+    return onConsume(transaction, user);
   });
 }
