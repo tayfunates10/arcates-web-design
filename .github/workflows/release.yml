@@ -21,6 +21,7 @@ env:
   REGISTRY: ghcr.io
   WEB_IMAGE: ghcr.io/${{ github.repository }}
   MIGRATE_IMAGE: ghcr.io/${{ github.repository }}-migrate
+  RELEASE_SITE_URL: ${{ vars.ARCATES_SITE_URL || 'https://arcates.com' }}
 
 jobs:
   publish:
@@ -75,10 +76,13 @@ jobs:
           push: true
           tags: ${{ steps.web_meta.outputs.tags }}
           labels: ${{ steps.web_meta.outputs.labels }}
+          build-args: |
+            NEXT_PUBLIC_SITE_URL=${{ env.RELEASE_SITE_URL }}
+            APP_VERSION=${{ github.ref_name }}
           cache-from: type=gha,scope=release-web
           cache-to: type=gha,mode=max,scope=release-web
           provenance: false
-          sbom: false
+          sbom: true
 
       - name: Build and push migration image
         id: migrate_push
@@ -92,7 +96,7 @@ jobs:
           cache-from: type=gha,scope=release-migrate
           cache-to: type=gha,mode=max,scope=release-migrate
           provenance: false
-          sbom: false
+          sbom: true
 
       - name: Attest web image provenance
         if: github.event.repository.visibility == 'public'
@@ -117,6 +121,9 @@ jobs:
         run: |
           {
             echo "## Arcates container release"
+            echo
+            echo "Site URL: ${RELEASE_SITE_URL}"
+            echo "Version: ${{ github.ref_name }}"
             echo
             echo "### Web image"
             echo '```text'
