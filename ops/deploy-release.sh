@@ -35,11 +35,11 @@ fi
 "${compose[@]}" config --quiet
 "${compose[@]}" pull db migrate web
 "${compose[@]}" up -d db
-"${compose[@]}" run --rm migrate
-"${compose[@]}" up -d --no-build --remove-orphans web
+"${compose[@]}" run --rm --no-deps migrate
+"${compose[@]}" up -d --no-deps --no-build --remove-orphans web
 
 if [[ "$WITH_PROXY" == "true" ]]; then
-  "${compose[@]}" up -d --no-build proxy
+  "${compose[@]}" up -d --no-deps --no-build proxy
 fi
 
 web_id="$("${compose[@]}" ps -q web)"
