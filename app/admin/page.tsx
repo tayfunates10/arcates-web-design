@@ -40,7 +40,7 @@ export default async function AdminDashboardPage() {
             <Link href="/admin/talepler"><span>03</span>Proje Talepleri</Link>
             <Link href="/admin/projeler"><span>04</span>Projeler</Link>
             <Link href="/admin/destek"><span>05</span>Destek</Link>
-            <Link href="/admin#konusmalar"><span>06</span>Konuşmalar</Link>
+            <Link href="/admin/konusmalar"><span>06</span>Konuşmalar</Link>
             <Link href="/admin/bilgi-tabani"><span>07</span>Bilgi Tabanı</Link>
             <Link href="/"><span>08</span>Siteyi Görüntüle</Link>
           </nav>
@@ -89,14 +89,14 @@ export default async function AdminDashboardPage() {
           <section className="portal-wide-card" id="konusmalar">
             <div className="portal-wide-card__header">
               <div><span className="eyebrow">Kanal merkezi</span><h2>Aktif konuşmalar</h2></div>
-              <strong>{activeConversationCount} aktif</strong>
+              <Link className="text-link" href="/admin/konusmalar">{activeConversationCount} konuşmayı yönet</Link>
             </div>
             {latestConversations.length ? latestConversations.map((conversation) => (
-              <div className="conversation-row" key={conversation.id}>
+              <Link className="conversation-row conversation-row--link" href={`/admin/konusmalar?conversation=${conversation.id}`} key={conversation.id}>
                 <i />
                 <div><strong>{conversation.contact?.name || "Anonim ziyaretçi"}</strong><small>{conversation.messages[0]?.content.slice(0, 100) || "Mesaj bekleniyor"}</small></div>
                 <span>{conversation.channel === "WHATSAPP" ? "WhatsApp" : "Web Chat"}</span>
-              </div>
+              </Link>
             )) : <EmptyAdminState text="Aktif konuşma bulunmuyor." />}
           </section>
 
