@@ -44,11 +44,20 @@ export default async function RegisterPage({ searchParams }: RegisterPageProps) 
             <span>E-posta adresi</span>
             <input name="email" type="email" autoComplete="email" maxLength={254} required />
           </label>
-          <label className="auth-form__full">
-            <span>Parola</span>
-            <input name="password" type="password" autoComplete="new-password" minLength={12} maxLength={128} required />
-            <small>En az 12 karakter; büyük harf, küçük harf ve sayı içermelidir.</small>
-          </label>
+          <div className="auth-form__full">
+            <label htmlFor="register-password"><span>Parola</span></label>
+            <input
+              id="register-password"
+              name="password"
+              type="password"
+              autoComplete="new-password"
+              minLength={12}
+              maxLength={128}
+              aria-describedby="register-password-help"
+              required
+            />
+            <small id="register-password-help">En az 12 karakter; büyük harf, küçük harf ve sayı içermelidir.</small>
+          </div>
           <label className="auth-consent auth-form__full">
             <input name="consent" type="checkbox" required />
             <span><Link href="/gizlilik-politikasi">Gizlilik Politikası</Link> ve <Link href="/kullanim-kosullari">Kullanım Koşulları</Link> metinlerini okudum ve kabul ediyorum.</span>
