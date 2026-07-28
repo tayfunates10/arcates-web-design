@@ -13,7 +13,7 @@ permissions:
 jobs:
   inventory-and-smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 50
     services:
       postgres:
         image: postgres:16-alpine
@@ -30,12 +30,16 @@ jobs:
           --health-retries=12
     env:
       DATABASE_URL: postgresql://arcates:arcates_qa_password@localhost:5432/arcates_qa?schema=public
-      NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3000
+      NEXT_PUBLIC_SITE_URL: https://127.0.0.1:3443
       ARCATES_OWNER_NAME: Arcates QA Owner
       ARCATES_OWNER_EMAIL: owner-qa@arcates.local
       ARCATES_OWNER_PASSWORD: ArcatesQaOwner2026
+      ARCATES_QA_CUSTOMER_EMAIL: customer-qa@arcates.local
+      ARCATES_QA_CUSTOMER_PASSWORD: ArcatesQaCustomer2026
+      ARCATES_E2E: "true"
       RATE_LIMIT_SECRET: arcates-qa-rate-limit-secret
       METRICS_TOKEN: arcates-qa-metrics-token
+      PLAYWRIGHT_BASE_URL: https://127.0.0.1:3443
       NODE_ENV: test
 
     steps:
@@ -70,7 +74,7 @@ jobs:
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high
 
-      - name: Validate and migrate database
+      - name: Validate, migrate and seed database
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -79,6 +83,7 @@ jobs:
           npm run db:status
           npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code
           npm run db:seed
+          npm run qa:seed
 
       - name: Run behavior tests
         run: npm test
@@ -89,7 +94,10 @@ jobs:
       - name: Production build
         run: npm run build
 
-      - name: Start application
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Start application and local HTTPS proxy
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -98,36 +106,82 @@ jobs:
           for attempt in $(seq 1 60); do
             if curl --silent --show-error --fail http://127.0.0.1:3000/api/health >/tmp/health.json; then
               cat /tmp/health.json
+              break
+            fi
+            if [[ "$attempt" == "60" ]]; then
+              cat /tmp/arcates-app.log
+              exit 1
+            fi
+            sleep 1
+          done
+
+          openssl req -x509 -newkey rsa:2048 -nodes \
+            -keyout /tmp/arcates-qa-key.pem \
+            -out /tmp/arcates-qa-cert.pem \
+            -days 1 \
+            -subj "/CN=127.0.0.1" \
+            -addext "subjectAltName=IP:127.0.0.1,DNS:localhost" >/dev/null 2>&1
+
+          QA_TLS_KEY=/tmp/arcates-qa-key.pem \
+          QA_TLS_CERT=/tmp/arcates-qa-cert.pem \
+          QA_PROXY_PORT=3443 \
+          npm run qa:proxy > /tmp/arcates-proxy.log 2>&1 &
+          echo $! > /tmp/arcates-proxy.pid
+
+          for attempt in $(seq 1 30); do
+            if curl --insecure --silent --show-error --fail https://127.0.0.1:3443/api/health >/tmp/https-health.json; then
+              cat /tmp/https-health.json
               exit 0
             fi
             sleep 1
           done
-          cat /tmp/arcates-app.log
+          cat /tmp/arcates-proxy.log
           exit 1
 
-      - name: Run production smoke test
+      - name: Run isolated production smoke test
         env:
           BASE_URL: http://127.0.0.1:3000
           ALLOW_HTTP: "true"
+          ALLOW_PRIVATE_TARGET: "true"
         run: bash ops/smoke-test.sh
 
-      - name: Probe public pages and metadata
+      - name: Probe public pages and metadata over HTTPS
         shell: bash
         run: |
           set -Eeuo pipefail
           for path in / /api/health /api/ready /robots.txt /sitemap.xml; do
             echo "===== GET ${path} ====="
-            curl --silent --show-error --fail-with-body --location --max-time 20 \
-              -D - "http://127.0.0.1:3000${path}" -o /tmp/response-body
+            curl --insecure --silent --show-error --fail-with-body --location --max-time 20 \
+              -D - "https://127.0.0.1:3443${path}" -o /tmp/response-body
             head -c 2000 /tmp/response-body
             echo
           done
 
-      - name: Show application log
+      - name: Run Chromium usage tests
+        run: npm run test:e2e
+
+      - name: Upload browser test report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: full-usage-qa-report
+          path: |
+            playwright-report
+            test-results/playwright
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Show application logs and stop services
         if: always()
         shell: bash
         run: |
+          echo "===== APPLICATION LOG ====="
           cat /tmp/arcates-app.log 2>/dev/null || true
+          echo "===== HTTPS PROXY LOG ====="
+          cat /tmp/arcates-proxy.log 2>/dev/null || true
+          if [[ -f /tmp/arcates-proxy.pid ]]; then
+            kill "$(cat /tmp/arcates-proxy.pid)" 2>/dev/null || true
+          fi
           if [[ -f /tmp/arcates-app.pid ]]; then
             kill "$(cat /tmp/arcates-app.pid)" 2>/dev/null || true
           fi
