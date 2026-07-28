@@ -160,7 +160,7 @@ test("registration creates an unverified account and blocks login until verifica
   await page.getByLabel("E-posta adresi").fill(email);
   await page.getByLabel("Parola").fill(password);
   await page.getByRole("button", { name: "Giriş Yap" }).click();
-  await expect(page.getByRole("alert")).toContainText("e-posta adresinizi doğrulamalısınız");
+  await expect(page.locator(".form-alert[role='alert']")).toContainText("e-posta adresinizi doğrulamalısınız");
   await expect(page.getByRole("link", { name: /doğrulama bağlantısı/i })).toBeVisible();
   expect(runtimeErrors).toEqual([]);
 });
