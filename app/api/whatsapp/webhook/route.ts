@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
+import { extractArcatesLinkCode, consumeChannelLinkCode } from "@/lib/channels/link-code";
 import { generateAssistantReply } from "@/lib/chat/engine";
 import { databaseConfigured, db } from "@/lib/db";
 import { sendWhatsAppText, whatsappConfigured } from "@/lib/whatsapp/client";
@@ -131,6 +132,10 @@ async function processIncomingMessage(message: WhatsAppMessage, profileName?: st
 
   try {
     const incomingText = extractText(message);
+    const linkCode = incomingText ? extractArcatesLinkCode(incomingText) : null;
+    const linkResult = linkCode
+      ? await consumeChannelLinkCode(linkCode, "WHATSAPP", message.from)
+      : null;
     const contact = await findOrCreateContact(message.from, profileName);
     const connection = await db.channelConnection.findUnique({
       where: { channel_externalIdentity: { channel: "WHATSAPP", externalIdentity: message.from } },
@@ -178,13 +183,25 @@ async function processIncomingMessage(message: WhatsAppMessage, profileName?: st
       },
     });
 
-    const assistant = incomingText
-      ? await generateAssistantReply({ message: incomingText, channel: "WHATSAPP", userId: linkedUserId })
-      : {
-          text: "Bu mesaj türünü şu anda otomatik olarak işleyemiyorum. Talebinizi metin olarak gönderirseniz çözüm kapsamını belirleyebilirim.",
-          source: "UNSUPPORTED_MESSAGE_FALLBACK",
-          knowledgeTitles: [] as string[],
-        };
+    const assistant = linkCode
+      ? linkResult
+        ? {
+            text: "WhatsApp numaranız Arcates hesabınızla güvenli biçimde eşleştirildi. Bundan sonraki hesap ve proje sorgularında doğrulanmış kullanıcı bağlamı kullanılabilir.",
+            source: "CHANNEL_LINK_VERIFIED",
+            knowledgeTitles: [] as string[],
+          }
+        : {
+            text: "Bağlantı kodu geçersiz, kullanılmış veya süresi dolmuş. Arcates müşteri panelinden yeni bir kod oluşturup tekrar gönderin.",
+            source: "CHANNEL_LINK_REJECTED",
+            knowledgeTitles: [] as string[],
+          }
+      : incomingText
+        ? await generateAssistantReply({ message: incomingText, channel: "WHATSAPP", userId: linkedUserId })
+        : {
+            text: "Bu mesaj türünü şu anda otomatik olarak işleyemiyorum. Talebinizi metin olarak gönderirseniz çözüm kapsamını belirleyebilirim.",
+            source: "UNSUPPORTED_MESSAGE_FALLBACK",
+            knowledgeTitles: [] as string[],
+          };
 
     let outboundMessageId: string | null = null;
     if (whatsappConfigured()) {
