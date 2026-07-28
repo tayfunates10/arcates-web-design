@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 export default function QuotePage() {
   return (
-    <>
+    <main>
       <PageHero
         eyebrow="Proje başlangıcı"
         title="İhtiyacınızı ölçülebilir bir proje kapsamına dönüştürelim."
@@ -34,6 +34,6 @@ export default function QuotePage() {
           </div>
         </div>
       </section>
-    </>
+    </main>
   );
 }
