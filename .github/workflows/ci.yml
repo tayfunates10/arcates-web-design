@@ -1,0 +1,102 @@
+name: Quality
+
+on:
+  push:
+    branches: [main, "agent/**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: arcates_ci
+          POSTGRES_USER: arcates
+          POSTGRES_PASSWORD: arcates_ci_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U arcates -d arcates_ci"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=12
+    env:
+      DATABASE_URL: postgresql://arcates:arcates_ci_password@localhost:5432/arcates_ci?schema=public
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      ARCATES_OWNER_NAME: Arcates CI Owner
+      ARCATES_OWNER_EMAIL: owner-ci@arcates.local
+      ARCATES_OWNER_PASSWORD: ArcatesCiOwner2026
+      RATE_LIMIT_SECRET: arcates-ci-rate-limit-secret
+      METRICS_TOKEN: arcates-ci-metrics-token
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Validate database schema
+        run: npm run db:validate
+      - name: Deploy migrations to clean PostgreSQL
+        run: npm run db:deploy
+      - name: Verify migration status
+        run: npm run db:status
+      - name: Detect schema drift
+        shell: bash
+        run: |
+          set +e
+          npx prisma migrate diff \
+            --from-url "$DATABASE_URL" \
+            --to-schema-datamodel prisma/schema.prisma \
+            --exit-code > migration-drift.log 2>&1
+          status=$?
+          cat migration-drift.log
+          exit $status
+      - name: Seed owner and verified content
+        run: npm run db:seed
+      - name: Run behavior tests
+        run: npm test
+      - name: Validate operations scripts
+        run: bash -n ops/*.sh
+      - name: Validate compose stack
+        run: docker compose --env-file .env.production.example -f docker-compose.yml -f docker-compose.proxy.yml config --quiet
+      - name: Validate Caddy configuration
+        run: >-
+          docker run --rm
+          -e ARCATES_DOMAIN=arcates.example.com
+          -e ACME_EMAIL=admin@arcates.example.com
+          -v "$PWD/ops/Caddyfile:/etc/caddy/Caddyfile:ro"
+          caddy:2.10-alpine
+          caddy validate --config /etc/caddy/Caddyfile
+      - name: Type check
+        run: npm run typecheck
+      - name: Production build
+        shell: bash
+        run: |
+          set +e
+          npm run build > build.log 2>&1
+          status=$?
+          tail -n 80 build.log
+          exit $status
+      - name: Build migration container
+        run: docker build --target migrate -t arcates-migrate:ci .
+      - name: Build application container
+        run: docker build --target runner -t arcates-web:ci .
+      - name: Upload verification logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verification-logs
+          path: |
+            build.log
+            migration-drift.log
+          if-no-files-found: warn
+          retention-days: 5
