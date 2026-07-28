@@ -220,12 +220,16 @@ test("owner can access every administration area and manage a customer project",
   await expect(page.getByRole("status")).toContainText(`${projectName} projesi güncellendi`);
   await expect(page.locator("article.operation-card").filter({ hasText: projectName })).toContainText("80%");
 
+  await page.goto("/admin");
   await logout(page);
   expect(runtimeErrors).toEqual([]);
 });
 
 test("verified customer can view projects, create support and is denied admin access", async ({ page }) => {
   const runtimeErrors = monitorRuntimeErrors(page);
+  const unique = Date.now();
+  const ticketTitle = `QA müşteri destek akışı ${unique}`;
+
   await login(page, customerEmail, customerPassword, /\/hesabim$/);
   await expect(page.getByRole("heading", { name: /Hoş geldiniz/ })).toBeVisible();
   await expect(page.getByText("Arcates QA Portal", { exact: true })).toBeVisible();
@@ -233,7 +237,7 @@ test("verified customer can view projects, create support and is denied admin ac
   await page.goto("/destek/destek-talebi");
   await page.getByLabel("İlgili proje").selectOption({ label: "Arcates QA Portal" });
   await page.getByLabel("Öncelik").selectOption("HIGH");
-  await page.getByLabel("Kısa başlık").fill("QA müşteri destek akışı");
+  await page.getByLabel("Kısa başlık").fill(ticketTitle);
   await page.getByLabel("Sorunu, beklenen davranışı ve tekrar adımlarını açıklayın").fill(
     "Müşteri panelinden destek talebi oluşturulduğunda kayıt referansı görünmeli ve talep hesap özetinde listelenmelidir.",
   );
@@ -243,7 +247,7 @@ test("verified customer can view projects, create support and is denied admin ac
   await expect(status).toContainText("Referans:");
 
   await page.goto("/hesabim");
-  await expect(page.getByText("QA müşteri destek akışı", { exact: true })).toBeVisible();
+  await expect(page.getByText(ticketTitle, { exact: true })).toBeVisible();
   await page.goto("/admin");
   await expect(page).toHaveURL(/\/hesabim$/);
 
