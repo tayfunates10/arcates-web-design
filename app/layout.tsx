@@ -46,19 +46,33 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#07111f",
+  themeColor: "#020b18",
   colorScheme: "dark",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const organizationSchema = {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    name: siteConfig.legalName,
-    url: siteConfig.url,
-    email: siteConfig.email,
-    description: siteConfig.description,
-  };
+  const structuredData = [
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      name: siteConfig.legalName,
+      url: siteConfig.url,
+      email: siteConfig.email,
+      description: siteConfig.description,
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: siteConfig.name,
+      url: siteConfig.url,
+      description: siteConfig.description,
+      inLanguage: "tr-TR",
+      publisher: {
+        "@type": "Organization",
+        name: siteConfig.legalName,
+      },
+    },
+  ];
 
   return (
     <html lang="tr">
@@ -70,7 +84,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <ChatWidget />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
         />
       </body>
     </html>
