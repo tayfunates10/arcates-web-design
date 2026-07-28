@@ -1,188 +1,276 @@
 import Link from "next/link";
+import { Accordion } from "@/components/ui/accordion";
+import { AnimatedCounter } from "@/components/motion/animated-counter";
+import { Reveal, StaggerContainer } from "@/components/motion/reveal";
+import { ArticleVisual, CtaSystemVisual, MessageBubbleVisual, ProcessIcon, ProjectVisual } from "@/components/home-visuals";
 import { ArrowRightIcon, CheckIcon, ServiceIcon } from "@/components/icons";
 import { HeroSystem } from "@/components/hero-system";
-import { blogPosts, faqItems, processSteps, projects, services } from "@/lib/content";
+import {
+  discoveryItems,
+  homeArticles,
+  homeFaq,
+  homeMetrics,
+  homeProcess,
+  homeProjects,
+  homeServices,
+} from "@/lib/home-content";
+import { siteConfig } from "@/lib/site";
 
 export default function HomePage() {
   return (
-    <main>
-      <section className="hero section-shell">
-        <div className="container hero__grid">
-          <div className="hero__content">
-            <div className="eyebrow"><span /> Dijital mühendislik ve web çözümleri</div>
-            <h1>İşletmeniz için hızlı, ölçeklenebilir ve <span>akıllı</span> dijital sistemler.</h1>
-            <p className="hero__lead">Kurumsal web sitelerinden özel yazılımlara, e-ticaretten yapay zekâ otomasyonlarına kadar dijital altyapınızı tasarlıyor, geliştiriyor ve sürdürüyoruz.</p>
-            <div className="hero__actions">
-              <Link href="/teklif-al" className="button button--primary">Projenizi Başlatın <ArrowRightIcon size={18} /></Link>
-              <Link href="/projelerimiz" className="button button--secondary">Projeleri İnceleyin</Link>
-            </div>
-            <div className="hero__trust">
-              <span><CheckIcon size={18} /> Performans odaklı</span>
-              <span><CheckIcon size={18} /> SEO temelli</span>
-              <span><CheckIcon size={18} /> Yönetilebilir altyapı</span>
-            </div>
+    <main className="home-v2">
+      <section className="premium-hero section-shell" aria-labelledby="home-hero-title">
+        <span className="premium-hero__grid" aria-hidden="true" />
+        <span className="premium-hero__glow premium-hero__glow--one" aria-hidden="true" />
+        <span className="premium-hero__glow premium-hero__glow--two" aria-hidden="true" />
+        <div className="container premium-hero__layout">
+          <div className="premium-hero__content">
+            <Reveal variant="fade" delay={80}>
+              <div className="premium-eyebrow"><span /> Dijital çözüm ortağınız</div>
+            </Reveal>
+            <Reveal delay={160}>
+              <h1 id="home-hero-title">
+                İşletmeniz için hızlı, ölçeklenebilir ve <span>akıllı</span> dijital sistemler.
+              </h1>
+            </Reveal>
+            <Reveal delay={260}>
+              <p className="premium-hero__lead">
+                Web sitelerinden özel yazılıma, SEO’dan otomasyona kadar uçtan uca dijital çözümlerle işinizi büyütüyor; süreçlerinizi sadeleştiriyor ve sürdürülebilir sonuçlar üretiyoruz.
+              </p>
+            </Reveal>
+            <Reveal delay={340}>
+              <div className="premium-hero__actions">
+                <Link href="/teklif-al" className="premium-button premium-button--primary">
+                  Ücretsiz Görüşme <ArrowRightIcon size={17} />
+                </Link>
+                <Link href="#projects" className="premium-button premium-button--secondary">
+                  Projelerimizi İncele
+                </Link>
+              </div>
+            </Reveal>
+            <Reveal delay={420}>
+              <div className="premium-hero__trust" aria-label="Arcates güven göstergeleri">
+                <span><CheckIcon size={17} /> 7+ yıllık deneyim</span>
+                <span><CheckIcon size={17} /> 100+ proje deneyimi</span>
+                <span><CheckIcon size={17} /> 7/24 destek altyapısı</span>
+              </div>
+            </Reveal>
           </div>
-          <HeroSystem />
+          <Reveal className="premium-hero__visual" variant="scale" delay={220}>
+            <HeroSystem />
+          </Reveal>
         </div>
       </section>
 
-      <section className="trust-strip" aria-label="Arcates kalite yaklaşımı">
-        <div className="container trust-strip__grid">
-          {[
-            ["01", "Mobil öncelikli tasarım"],
-            ["02", "Ölçülebilir performans"],
-            ["03", "Gelişmiş SEO mimarisi"],
-            ["04", "Güvenli yönetim sistemi"],
-            ["05", "Sürekli teknik destek"],
-          ].map(([id, title]) => <div key={id}><span>{id}</span><strong>{title}</strong></div>)}
-        </div>
-      </section>
-
-      <section className="section section--services">
+      <section id="services" className="premium-section premium-section--services" aria-labelledby="services-title">
         <div className="container">
-          <SectionHeading eyebrow="Web Çözümleri" title="Tek bir web sitesinden daha fazlasını tasarlıyoruz." description="İş hedefinizi, kullanıcı deneyimini, yazılım mimarisini ve büyüme sistemlerini tek çözüm altında birleştiriyoruz." href="/web-cozumleri" />
-          <div className="service-grid">
-            {services.map((service) => (
-              <Link href={`/web-cozumleri/${service.slug}`} className="service-card" key={service.slug}>
-                <div className="service-card__icon"><ServiceIcon name={service.icon} /></div>
-                <span className="service-card__index">0{services.indexOf(service) + 1}</span>
-                <h3>{service.shortTitle}</h3>
+          <SectionHeading
+            eyebrow="Hizmetlerimiz"
+            id="services-title"
+            title="Tek bir web sitesinden daha fazlasını tasarlıyoruz."
+            description="Strateji, tasarım, yazılım, içerik ve otomasyonu aynı ölçülebilir sistem içinde birleştiriyoruz."
+            href="/web-cozumleri"
+            linkLabel="Tüm hizmetleri gör"
+          />
+          <StaggerContainer className="premium-service-grid">
+            {homeServices.map((service, index) => (
+              <Link href={service.href} className="premium-card premium-service-card stagger-item" key={service.title}>
+                <span className="premium-card__shine" aria-hidden="true" />
+                <div className="premium-service-card__icon"><ServiceIcon name={service.icon} size={32} /></div>
+                <span className="premium-service-card__index">0{index + 1}</span>
+                <h3>{service.title}</h3>
                 <p>{service.description}</p>
-                <span className="service-card__link">Detaylı inceleyin <ArrowRightIcon size={17} /></span>
+                <span className="premium-card__link">Detayları İncele <ArrowRightIcon size={16} /></span>
               </Link>
             ))}
-          </div>
+          </StaggerContainer>
         </div>
       </section>
 
-      <section className="section solution-finder">
-        <div className="container solution-finder__grid">
-          <div>
-            <div className="eyebrow"><span /> Akıllı çözüm yönlendirmesi</div>
-            <h2>Hangi dijital çözüme ihtiyacınız olduğunu birlikte belirleyelim.</h2>
-            <p>İşletmenizi, mevcut sisteminizi ve hedefinizi birkaç cümleyle anlatın. Arcates Asistan uygun hizmetleri, temel özellikleri ve sonraki adımı düzenli bir kapsam halinde oluştursun.</p>
-            <button className="button button--primary" type="button" data-open-chat>Arcates Asistan ile Başlayın <ArrowRightIcon size={18} /></button>
-          </div>
-          <div className="solution-map" aria-label="Çözüm belirleme adımları">
-            {[
-              ["01", "İhtiyacınızı anlatın", "Doğal dille hedefinizi ve mevcut durumunuzu paylaşın."],
-              ["02", "Sistem analiz etsin", "Hizmet, özellik, entegrasyon ve içerik ihtiyaçları eşleştirilsin."],
-              ["03", "Kapsam oluşturulsun", "Uygun çözüm ve doğrulanması gereken kararlar netleştirilsin."],
-            ].map(([id, title, text]) => (
-              <div className="solution-map__item" key={id}>
-                <span>{id}</span><div><strong>{title}</strong><p>{text}</p></div>
-              </div>
-            ))}
-          </div>
+      <section id="discovery" className="premium-section premium-discovery" aria-labelledby="discovery-title">
+        <span className="premium-discovery__glow" aria-hidden="true" />
+        <div className="container premium-discovery__layout">
+          <Reveal variant="left" className="premium-discovery__content">
+            <div className="premium-eyebrow"><span /> Birlikte keşfedelim</div>
+            <h2 id="discovery-title">Hangi dijital çözüme ihtiyacınız olduğunu birlikte belirleyelim.</h2>
+            <p>Doğru sorularla mevcut durumunuzu, hedef kitlenizi ve büyüme fırsatlarınızı analiz ediyor; uygulanabilir yol haritasını birlikte oluşturuyoruz.</p>
+            <button className="premium-button premium-button--primary" type="button" data-open-chat>
+              Ücretsiz Görüşme Talep Edin <ArrowRightIcon size={17} />
+            </button>
+            <div className="premium-discovery__benefits">
+              <span><CheckIcon size={17} /> Keşif & analiz</span>
+              <span><CheckIcon size={17} /> Doğru strateji</span>
+              <span><CheckIcon size={17} /> Net yol haritası</span>
+            </div>
+          </Reveal>
+          <Reveal variant="right" className="premium-discovery__panel" delay={100}>
+            <Accordion items={discoveryItems} />
+          </Reveal>
         </div>
       </section>
 
-      <section className="section">
+      <section id="projects" className="premium-section" aria-labelledby="projects-title">
         <div className="container">
-          <SectionHeading eyebrow="Projelerimiz" title="Tasarımı teknik sonuçlarla birleştiren çalışmalar." description="Her projeyi yalnızca görünümüyle değil, çözdüğü problem, kurduğu sistem ve ürettiği sonuç üzerinden anlatıyoruz." href="/projelerimiz" />
-          <div className="project-grid">
-            {projects.map((project, index) => (
-              <Link href={`/projelerimiz/${project.slug}`} className="project-card" key={project.slug}>
-                <div className={`project-card__visual project-card__visual--${index + 1}`}>
-                  <div className="project-card__window">
-                    <span /><span /><span />
-                    <div className="project-card__diagram"><i /><i /><i /><i /></div>
-                  </div>
-                </div>
-                <div className="project-card__body">
-                  <span className="project-card__category">{project.category}</span>
+          <SectionHeading
+            eyebrow="Öne çıkan projeler"
+            id="projects-title"
+            title="Tasarımın teknik sonuçlarla buluştuğu çalışmalar."
+            description="Her projeyi yalnızca görünümüyle değil, çözdüğü problem ve kurduğu sürdürülebilir sistem üzerinden ele alıyoruz."
+            href="/projelerimiz"
+            linkLabel="Tüm projeleri gör"
+          />
+          <StaggerContainer className="premium-project-grid" amount={0.08}>
+            {homeProjects.map((project) => (
+              <Link href={`/projelerimiz/${project.slug}`} className="premium-project-card stagger-item" key={project.slug}>
+                <ProjectVisual variant={project.accent} />
+                <div className="premium-project-card__body">
+                  <span>{project.category}</span>
                   <h3>{project.title}</h3>
                   <p>{project.summary}</p>
-                  <div className="project-card__metrics">{project.metrics.map((metric) => <span key={metric}>{metric}</span>)}</div>
+                  <span className="premium-card__link">Projeyi İncele <ArrowRightIcon size={16} /></span>
                 </div>
               </Link>
             ))}
-          </div>
+          </StaggerContainer>
         </div>
       </section>
 
-      <section className="section section--process">
+      <section id="process" className="premium-section premium-process" aria-labelledby="process-title">
         <div className="container">
-          <SectionHeading eyebrow="Çalışma Sistemi" title="Belirsizliği azaltan altı aşamalı geliştirme süreci." description="Her adımın amacı, çıktısı ve doğrulama yöntemi proje başlamadan tanımlanır." href="/nasil-calisiyoruz" />
-          <div className="process-grid">
-            {processSteps.map((step) => (
-              <article key={step.id} className="process-card">
-                <span>{step.id}</span><h3>{step.title}</h3><p>{step.description}</p>
+          <SectionHeading
+            eyebrow="Çalışma sürecimiz"
+            id="process-title"
+            title="Belirsizliği azaltan dört aşamalı geliştirme süreci."
+            description="Her aşamanın amacı, çıktısı ve doğrulama yöntemi proje başlamadan önce görünür hale gelir."
+            href="/nasil-calisiyoruz"
+            linkLabel="Süreci incele"
+          />
+          <StaggerContainer className="premium-process__timeline">
+            {homeProcess.map((step) => (
+              <article className="premium-process-card stagger-item" key={step.id}>
+                <span className="premium-process-card__number">{step.id}</span>
+                <div className="premium-process-card__icon"><ProcessIcon name={step.icon} /></div>
+                <h3>{step.title}</h3>
+                <p>{step.description}</p>
               </article>
             ))}
-          </div>
+          </StaggerContainer>
         </div>
       </section>
 
-      <section className="section quality-section">
-        <div className="container quality-section__grid">
-          <div>
-            <div className="eyebrow"><span /> Kalite yaklaşımı</div>
-            <h2>SEO, performans ve güvenlik sonradan eklenen özellikler değildir.</h2>
-            <p>Mimari kararları ilk günden erişilebilirlik, Core Web Vitals, taranabilirlik, güvenli veri akışı ve bakım kolaylığı ile birlikte veririz.</p>
-            <Link href="/web-cozumleri/seo-performans" className="text-link">Teknik yaklaşımı inceleyin <ArrowRightIcon size={18} /></Link>
-          </div>
-          <div className="quality-metrics">
-            {[
-              ["LCP", "≤ 2,5 sn", "Yükleme deneyimi"],
-              ["INP", "≤ 200 ms", "Etkileşim yanıtı"],
-              ["CLS", "≤ 0,1", "Görsel kararlılık"],
-              ["A11Y", "WCAG", "Erişilebilir arayüz"],
-            ].map(([code, value, label]) => <div key={code}><span>{code}</span><strong>{value}</strong><small>{label}</small></div>)}
-          </div>
-        </div>
-      </section>
-
-      <section className="section">
+      <section className="premium-section premium-metrics" aria-labelledby="metrics-title">
         <div className="container">
-          <SectionHeading eyebrow="Bilgi Merkezi" title="Daha doğru dijital kararlar için teknik rehberler." description="Web tasarım, yazılım, yapay zekâ, SEO ve performans konularını uygulanabilir içeriklerle açıklıyoruz." href="/blog" />
-          <div className="blog-grid">
-            {blogPosts.map((post) => (
-              <Link href={`/blog/${post.slug}`} className="blog-card" key={post.slug}>
-                <span>{post.category}</span><h3>{post.title}</h3><p>{post.excerpt}</p><small>{post.readingTime}</small>
+          <Reveal>
+            <div className="premium-eyebrow"><span /> Sonuçlarla konuşuyoruz</div>
+            <h2 id="metrics-title" className="sr-only">Arcates teknik performans hedefleri</h2>
+          </Reveal>
+          <StaggerContainer className="premium-metrics__grid">
+            {homeMetrics.map((metric) => (
+              <article className="premium-card premium-metric-card stagger-item" key={metric.label}>
+                <AnimatedCounter
+                  value={metric.value}
+                  decimals={metric.decimals}
+                  prefix={"prefix" in metric ? metric.prefix : undefined}
+                  suffix={"suffix" in metric ? metric.suffix : undefined}
+                />
+                <p>{metric.label}</p>
+              </article>
+            ))}
+          </StaggerContainer>
+        </div>
+      </section>
+
+      <section id="blog" className="premium-section" aria-labelledby="insights-title">
+        <div className="container">
+          <SectionHeading
+            eyebrow="İçgörüler"
+            id="insights-title"
+            title="Dijital dünyadan güncel içgörüler ve ipuçları."
+            description="Web, performans, yapay zekâ ve kullanıcı deneyimi konularını uygulanabilir teknik rehberlerle açıklıyoruz."
+            href="/blog"
+            linkLabel="Tüm yazıları gör"
+          />
+          <StaggerContainer className="premium-article-grid">
+            {homeArticles.map((article) => (
+              <Link href={`/blog/${article.slug}`} className="premium-article-card stagger-item" key={article.slug}>
+                <ArticleVisual variant={article.visual} />
+                <div className="premium-article-card__body">
+                  <div><time>{article.date}</time><span>{article.category}</span></div>
+                  <h3>{article.title}</h3>
+                  <span className="premium-card__link">Devamını Oku <ArrowRightIcon size={16} /></span>
+                </div>
               </Link>
             ))}
-          </div>
+          </StaggerContainer>
         </div>
       </section>
 
-      <section className="section faq-section">
-        <div className="container faq-section__grid">
-          <div>
-            <div className="eyebrow"><span /> Sık Sorulan Sorular</div>
-            <h2>Proje başlamadan önce bilmeniz gerekenler.</h2>
-            <p>Daha özel bir sorunuz varsa sağ alttaki Arcates Asistan üzerinden doğrudan yazabilirsiniz.</p>
-            <Link href="/sss" className="button button--secondary">Tüm soruları inceleyin</Link>
-          </div>
-          <div className="faq-list">
-            {faqItems.map((item) => (
-              <details key={item.question}>
-                <summary>{item.question}<span /></summary><p>{item.answer}</p>
-              </details>
-            ))}
-          </div>
+      <section id="faq" className="premium-section premium-faq" aria-labelledby="faq-title">
+        <div className="container premium-faq__layout">
+          <Reveal variant="left" className="premium-faq__questions">
+            <div className="premium-eyebrow"><span /> Projeye başlamadan önce</div>
+            <h2 id="faq-title">Bilmeniz gerekenler.</h2>
+            <Accordion items={homeFaq} />
+          </Reveal>
+          <Reveal variant="right" className="premium-contact-card" delay={100}>
+            <div>
+              <div className="premium-eyebrow"><span /> İletişim</div>
+              <h2>Hâlâ sorularınız mı var?</h2>
+              <p>Ekibimiz tüm sorularınızı yanıtlamak ve projeniz için doğru çözümü sunmak için hazır.</p>
+              <Link href="/iletisim" className="premium-button premium-button--primary">Bize Ulaşın <ArrowRightIcon size={17} /></Link>
+              <div className="premium-contact-card__details">
+                <span>E-posta<strong>{siteConfig.email}</strong></span>
+                <span>Proje hattı<strong>Teklif formu üzerinden</strong></span>
+              </div>
+            </div>
+            <MessageBubbleVisual />
+          </Reveal>
         </div>
       </section>
 
-      <section className="section final-cta">
-        <div className="container final-cta__inner">
-          <span className="final-cta__grid" />
-          <div><div className="eyebrow"><span /> Yeni proje</div><h2>İşletmenizin bir sonraki dijital sistemini birlikte oluşturalım.</h2></div>
-          <div className="final-cta__actions">
-            <Link href="/teklif-al" className="button button--light">Projenizi Başlatın <ArrowRightIcon size={18} /></Link>
-            <Link href="/iletisim" className="button button--ghost">İletişime Geçin</Link>
-          </div>
+      <section className="premium-final-cta" aria-labelledby="final-cta-title">
+        <div className="container premium-final-cta__inner">
+          <span className="premium-final-cta__grid" aria-hidden="true" />
+          <Reveal variant="left" className="premium-final-cta__content">
+            <h2 id="final-cta-title">İşletmenizin bir sonraki dijital sistemini birlikte oluşturalım.</h2>
+            <p>Fikrinizi anlatın, en doğru çözümü birlikte şekillendirelim.</p>
+            <div className="premium-final-cta__actions">
+              <Link href="/teklif-al" className="premium-button premium-button--primary">Ücretsiz Görüşme Talep Edin <ArrowRightIcon size={17} /></Link>
+              <Link href="#projects" className="premium-button premium-button--secondary">Projelerimizi İncele</Link>
+            </div>
+          </Reveal>
+          <Reveal variant="right" className="premium-final-cta__visual" delay={120}>
+            <CtaSystemVisual />
+          </Reveal>
         </div>
       </section>
     </main>
   );
 }
 
-function SectionHeading({ eyebrow, title, description, href }: { eyebrow: string; title: string; description: string; href: string }) {
+function SectionHeading({
+  eyebrow,
+  id,
+  title,
+  description,
+  href,
+  linkLabel,
+}: {
+  eyebrow: string;
+  id: string;
+  title: string;
+  description: string;
+  href: string;
+  linkLabel: string;
+}) {
   return (
-    <div className="section-heading">
-      <div><div className="eyebrow"><span /> {eyebrow}</div><h2>{title}</h2><p>{description}</p></div>
-      <Link href={href} className="text-link">Tümünü inceleyin <ArrowRightIcon size={18} /></Link>
-    </div>
+    <Reveal className="premium-section-heading">
+      <div>
+        <div className="premium-eyebrow"><span /> {eyebrow}</div>
+        <h2 id={id}>{title}</h2>
+        <p>{description}</p>
+      </div>
+      <Link href={href} className="premium-text-link">{linkLabel} <ArrowRightIcon size={17} /></Link>
+    </Reveal>
   );
 }
