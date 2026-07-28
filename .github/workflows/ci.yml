@@ -21,6 +21,10 @@ jobs:
           node-version: 22
       - name: Install dependencies
         run: npm install --no-audit --no-fund
+      - name: Validate database schema
+        env:
+          DATABASE_URL: postgresql://arcates:arcates@localhost:5432/arcates
+        run: npm run db:validate
       - name: Type check
         run: npm run typecheck
       - name: Production build
@@ -29,7 +33,7 @@ jobs:
           set +e
           npm run build > build.log 2>&1
           status=$?
-          tail -n 40 build.log
+          tail -n 60 build.log
           exit $status
       - name: Upload build log
         if: always()
