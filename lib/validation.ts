@@ -46,7 +46,7 @@ export const chatMessageSchema = z.object({
 
 export const knowledgeDocumentSchema = z.object({
   title: z.string().trim().min(4, "Başlık en az 4 karakter olmalıdır.").max(160),
-  slug: z.string().trim().toLocaleLowerCase("tr-TR")
+  slug: z.string().trim().toLowerCase()
     .min(3, "Slug en az 3 karakter olmalıdır.")
     .max(160)
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Slug yalnızca küçük harf, sayı ve tire içerebilir."),
