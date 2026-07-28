@@ -1,6 +1,12 @@
+import { randomUUID } from "node:crypto";
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { getCurrentUser } from "@/lib/auth/session";
+import { databaseConfigured, db } from "@/lib/db";
+import { chatMessageSchema, firstValidationError } from "@/lib/validation";
 
-const MAX_MESSAGE_LENGTH = 2_000;
+const GUEST_COOKIE = "arcates_guest";
+const GUEST_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
 
 export async function POST(request: Request) {
   let body: unknown;
@@ -10,14 +16,75 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Geçersiz istek gövdesi." }, { status: 400 });
   }
 
-  const message = typeof body === "object" && body !== null && "message" in body
-    ? String((body as { message: unknown }).message).trim()
-    : "";
+  const parsed = chatMessageSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: firstValidationError(parsed.error) }, { status: 422 });
+  }
 
-  if (!message) return NextResponse.json({ error: "Mesaj boş olamaz." }, { status: 400 });
-  if (message.length > MAX_MESSAGE_LENGTH) return NextResponse.json({ error: "Mesaj çok uzun." }, { status: 413 });
+  const reply = buildReply(parsed.data.message);
+  if (!databaseConfigured()) return NextResponse.json({ reply, persisted: false });
 
-  return NextResponse.json({ reply: buildReply(message) });
+  try {
+    const user = await getCurrentUser();
+    const cookieStore = await cookies();
+    const existingGuestId = cookieStore.get(GUEST_COOKIE)?.value;
+    const guestId = user ? null : existingGuestId ?? randomUUID();
+    const externalId = user ? `web:user:${user.id}` : `web:guest:${guestId}`;
+
+    const conversation = await db.conversation.upsert({
+      where: { channel_externalId: { channel: "WEB", externalId } },
+      update: { status: "AI_ACTIVE" },
+      create: { channel: "WEB", externalId, status: "AI_ACTIVE" },
+    });
+
+    if (user) {
+      await db.conversationParticipant.upsert({
+        where: { conversationId_userId: { conversationId: conversation.id, userId: user.id } },
+        update: { leftAt: null },
+        create: { conversationId: conversation.id, userId: user.id },
+      });
+    }
+
+    await db.$transaction([
+      db.message.create({
+        data: {
+          conversationId: conversation.id,
+          role: "USER",
+          content: parsed.data.message,
+          metadata: { source: "WEB_WIDGET" },
+        },
+      }),
+      db.message.create({
+        data: {
+          conversationId: conversation.id,
+          role: "ASSISTANT",
+          content: reply,
+          metadata: { source: "RULE_ENGINE", version: 1 },
+        },
+      }),
+    ]);
+
+    const response = NextResponse.json({
+      reply,
+      conversationId: conversation.id,
+      persisted: true,
+    });
+
+    if (guestId && !existingGuestId) {
+      response.cookies.set(GUEST_COOKIE, guestId, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: GUEST_MAX_AGE_SECONDS,
+      });
+    }
+
+    return response;
+  } catch (error) {
+    console.error("Chat persistence failed", error);
+    return NextResponse.json({ reply, persisted: false });
+  }
 }
 
 function buildReply(message: string) {
