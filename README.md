@@ -1,25 +1,27 @@
 # Arcates Web Design
 
-Arcates için geliştirilen performans, SEO, müşteri yönetimi ve yapay zekâ odaklı kurumsal web platformu.
+Arcates için geliştirilen performans, SEO, müşteri yönetimi, içerik yayınlama ve yapay zekâ odaklı kurumsal web platformu.
 
 ## Uygulama kapsamı
 
 - Next.js App Router, React ve TypeScript altyapısı
 - Koyu, responsive Arcates tasarım sistemi
 - Emoji ve ikon fontu içermeyen özel SVG ikon kütüphanesi
-- Ana sayfa, hizmetler, hizmet detayları, projeler, blog, destek ve yasal sayfalar
+- Ana sayfa, hizmetler, projeler, blog, destek, SSS ve yasal sayfalar
 - PostgreSQL ve Prisma veri katmanı
+- Sürümlü Prisma SQL migration’ları
 - `scrypt` parola hash sistemi ve iptal edilebilir opak oturumlar
 - Müşteri kayıt, giriş, çıkış ve rol tabanlı yönetim erişimi
 - Veritabanından beslenen müşteri ve yönetici panelleri
 - Kalıcı teklif talepleri ve yetkili destek kayıtları
-- Ortak web ve WhatsApp konuşma modeli
+- Web ve WhatsApp için ortak konuşma modeli
+- Yönetilebilir blog, vaka çalışması ve SSS içerikleri
 - Bilgi tabanıyla temellendirilen OpenAI Responses API adaptörü
 - OpenAI kullanılamadığında güvenli kural motoru geri dönüşü
-- WhatsApp Cloud API webhook doğrulama, HMAC imza kontrolü, idempotency ve metin yanıtı
+- WhatsApp Cloud API webhook doğrulaması, HMAC kontrolü ve idempotency
 - Sitemap, robots, metadata, Open Graph ve JSON-LD altyapısı
 - Core Web Vitals ve erişilebilirlik odaklı CSS
-- Prisma doğrulama, TypeScript ve production build çalıştıran GitHub Actions
+- Gerçek PostgreSQL, test, typecheck, production build ve Docker build kalite kapıları
 
 ## Yerel kurulum
 
@@ -27,19 +29,34 @@ Arcates için geliştirilen performans, SEO, müşteri yönetimi ve yapay zekâ 
 cp .env.example .env.local
 npm install
 npm run db:validate
-npm run db:push
+npm run db:deploy
 npm run db:seed
 npm run dev
 ```
 
 Uygulama varsayılan olarak `http://localhost:3000` adresinde çalışır.
 
+Yeni bir şema değişikliği geliştirirken:
+
+```bash
+npm run db:migrate
+```
+
+Canlı veya CI ortamında yalnızca kayıtlı migration’ları uygulamak için:
+
+```bash
+npm run db:deploy
+```
+
+Üretim veritabanında `db:push` kullanılmamalıdır.
+
 ## Zorunlu veritabanı ayarları
 
 `.env.local` içinde geçerli bir PostgreSQL bağlantısı tanımlayın:
 
 ```env
-DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/arcates?sslmode=require
+DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/arcates?schema=public
+RATE_LIMIT_SECRET=uzun-ve-rastgele-bir-deger
 ```
 
 İlk yönetici hesabı için:
@@ -56,7 +73,7 @@ Ardından:
 npm run db:seed
 ```
 
-Seed komutu aynı e-posta için ikinci hesap açmaz; mevcut hesabı `OWNER` rolüyle günceller.
+Seed komutu aynı e-posta için ikinci hesap açmaz; mevcut hesabı `OWNER` rolüyle günceller ve doğrulanmış başlangıç içeriklerini yeniden kullanılabilir biçimde oluşturur.
 
 ## OpenAI yapılandırması
 
@@ -91,30 +108,56 @@ Webhook adresi:
 /api/whatsapp/webhook
 ```
 
-Gelen webhook isteklerinde `x-hub-signature-256` doğrulaması zorunludur. Her mesaj önce idempotency event store'a yazılır, daha sonra ortak konuşma ve mesaj tablolarına işlenir.
+Gelen webhook isteklerinde `x-hub-signature-256` doğrulaması zorunludur. Her mesaj önce idempotency event store’a yazılır, daha sonra ortak konuşma ve mesaj tablolarına işlenir.
 
-WhatsApp mesaj akışı:
+## Docker ile üretim kurulumu
 
-1. Webhook imzası doğrulanır.
-2. Mesaj kimliği daha önce işlenmiş mi kontrol edilir.
-3. Telefon numarası mevcut kullanıcı bağlantısıyla eşleştirilir.
-4. Web chatbotuyla aynı konuşma motoru çalıştırılır.
-5. Çıkış mesajı Cloud API üzerinden gönderilir.
-6. Gelen ve giden mesajlar aynı konuşma kaydında tutulur.
+Örnek üretim dosyasını kopyalayın ve değerleri değiştirin:
+
+```bash
+cp .env.production.example .env.production
+```
+
+Ardından migration ve uygulama servislerini başlatın:
+
+```bash
+docker compose --env-file .env.production up -d --build
+```
+
+Servis sırası:
+
+1. PostgreSQL sağlık kontrolünden geçer.
+2. `migrate` konteyneri kayıtlı migration’ları uygular ve kapanır.
+3. `web` konteyneri başlatılır.
+4. `/api/ready` başarılı olmadan uygulama sağlıklı kabul edilmez.
+
+Uygulama varsayılan olarak yalnızca `127.0.0.1:3000` üzerinde yayınlanır. İnternet erişimi Nginx, Caddy veya Cloudflare Tunnel gibi HTTPS sağlayan bir reverse proxy üzerinden verilmelidir.
 
 ## Kalite kontrolleri
 
 ```bash
 npm run db:validate
+npm run db:deploy
+npm test
 npm run typecheck
 npm run build
 ```
 
-Tümünü birlikte çalıştırmak için:
+Uygulama seviyesindeki kontrolleri birlikte çalıştırmak için:
 
 ```bash
 npm run check
 ```
+
+GitHub Actions ayrıca:
+
+- Temiz PostgreSQL servisi başlatır
+- Migration’ları uygular
+- Şema drift kontrolü yapar
+- Owner ve başlangıç içeriklerini seed eder
+- Kritik davranış testlerini çalıştırır
+- TypeScript ve Next.js production build’i doğrular
+- Migration ve uygulama Docker hedeflerini ayrı ayrı derler
 
 ## Güvenlik ilkeleri
 
@@ -125,15 +168,15 @@ npm run check
 - Destek taleplerinde proje üyeliği sunucuda doğrulanır.
 - WhatsApp webhook olayları tekrar işlense bile ikinci mesaj kaydı oluşturmaz.
 - Chatbot fiyat, teslim tarihi veya hesap işlemi hakkında doğrulanmamış iddia üretmemesi için sınırlandırılmıştır.
+- Değişiklik yapan sohbet araçları açık kullanıcı onayı olmadan çalışmaz.
 
 ## Üretim öncesinde tamamlanacak işlemler
 
-Kod tabanı production build kontrolünden geçer; canlıya alınmadan önce hedef ortamda şu operasyonel adımlar tamamlanmalıdır:
-
-- Gerçek PostgreSQL veritabanının oluşturulması ve şemanın uygulanması
+- Alan adı, DNS ve HTTPS reverse proxy ayarları
+- Güçlü üretim parolalarının secret store üzerinden tanımlanması
 - Owner hesabının seed edilmesi
-- Alan adı ve HTTPS ayarları
-- OpenAI ve WhatsApp anahtarlarının secret store üzerinden tanımlanması
-- Meta tarafında webhook aboneliğinin ve üretim telefon numarasının etkinleştirilmesi
-- Yedekleme, hata izleme, oran sınırlama ve uygulama metriklerinin hedef altyapıya bağlanması
+- OpenAI ve WhatsApp üretim anahtarlarının tanımlanması
+- Meta webhook aboneliği ve üretim telefon numarasının etkinleştirilmesi
+- PostgreSQL otomatik yedekleme ve geri yükleme testi
+- Hata izleme, merkezi log ve uygulama metrikleri
 - Yasal metinlerin hukuk uzmanı tarafından doğrulanması
