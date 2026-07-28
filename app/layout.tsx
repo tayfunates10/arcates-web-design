@@ -65,7 +65,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body>
         <a className="skip-link" href="#main-content">Ana içeriğe geç</a>
         <SiteHeader />
-        <main id="main-content">{children}</main>
+        <div id="main-content">{children}</div>
         <SiteFooter />
         <ChatWidget />
         <script

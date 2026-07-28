@@ -21,7 +21,7 @@ export default async function SupportRequestPage() {
   });
 
   return (
-    <>
+    <main>
       <PageHero
         eyebrow="Güvenli müşteri desteği"
         title="Sorunu proje bağlamıyla birlikte kaydedin."
@@ -44,6 +44,6 @@ export default async function SupportRequestPage() {
           </div>
         </div>
       </section>
-    </>
+    </main>
   );
 }

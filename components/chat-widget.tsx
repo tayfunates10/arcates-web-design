@@ -38,12 +38,14 @@ export function ChatWidget() {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [input, setInput] = useState("");
   const [pending, setPending] = useState(false);
+  const [historyReady, setHistoryReady] = useState(false);
   const [status, setStatus] = useState<ChatStatus>("AI_ACTIVE");
   const endRef = useRef<HTMLDivElement>(null);
   const refreshingRef = useRef(false);
+  const pendingRef = useRef(false);
 
-  const loadHistory = useCallback(async () => {
-    if (refreshingRef.current) return;
+  const loadHistory = useCallback(async (force = false) => {
+    if (refreshingRef.current || (pendingRef.current && !force)) return;
     refreshingRef.current = true;
 
     try {
@@ -51,16 +53,20 @@ export function ChatWidget() {
       if (!response.ok) return;
       const data = await response.json() as HistoryResponse;
       if (data.status) setStatus(data.status);
-      if (data.messages?.length) setMessages(data.messages);
+      if (data.messages) {
+        setMessages(data.messages.length ? [...initialMessages, ...data.messages] : initialMessages);
+      }
     } catch {
       // Sohbet kullanılabilir kalır; geçici geçmiş yenileme hatası sessizce tekrar denenir.
     } finally {
       refreshingRef.current = false;
+      setHistoryReady(true);
     }
   }, []);
 
   useEffect(() => {
     if (!open) return;
+    setHistoryReady(false);
     void loadHistory();
     const interval = window.setInterval(() => void loadHistory(), 5_000);
     return () => window.clearInterval(interval);
@@ -81,12 +87,13 @@ export function ChatWidget() {
 
   async function sendMessage(content: string) {
     const trimmed = content.trim();
-    if (!trimmed || pending) return;
+    if (!trimmed || pending || !historyReady) return;
 
     const nextMessage: Message = { id: crypto.randomUUID(), role: "user", content: trimmed };
     setMessages((current) => [...current, nextMessage]);
     setInput("");
     setPending(true);
+    pendingRef.current = true;
 
     try {
       const response = await fetch("/api/chat", {
@@ -107,7 +114,8 @@ export function ChatWidget() {
           { id: crypto.randomUUID(), role: "assistant", content: data.reply as string },
         ]);
       }
-      await loadHistory();
+      pendingRef.current = false;
+      await loadHistory(true);
     } catch (error) {
       setMessages((current) => [
         ...current,
@@ -120,6 +128,7 @@ export function ChatWidget() {
         },
       ]);
     } finally {
+      pendingRef.current = false;
       setPending(false);
     }
   }
@@ -145,19 +154,19 @@ export function ChatWidget() {
               <div><strong>Arcates Asistan</strong><span><i /> {stateLabel}</span></div>
             </div>
             <div className="chat-panel__tools">
-              <button type="button" aria-label="Görüşme geçmişini yenile" onClick={() => void loadHistory()}><HistoryIcon size={19} /></button>
+              <button type="button" aria-label="Görüşme geçmişini yenile" onClick={() => void loadHistory()} disabled={!historyReady || pending}><HistoryIcon size={19} /></button>
               <button type="button" aria-label="Sohbeti kapat" onClick={() => setOpen(false)}><CloseIcon size={19} /></button>
             </div>
           </header>
 
-          <div className="chat-panel__messages" aria-live="polite">
+          <div className="chat-panel__messages" aria-live="polite" aria-busy={!historyReady || pending}>
             {messages.map((message) => (
               <div key={message.id} className={`chat-message chat-message--${message.role}`}>{message.content}</div>
             ))}
             {messages.length === 1 ? (
               <div className="chat-quick-prompts">
                 {quickPrompts.map((prompt) => (
-                  <button key={prompt} type="button" onClick={() => void sendMessage(prompt)}>{prompt}</button>
+                  <button key={prompt} type="button" disabled={!historyReady || pending} onClick={() => void sendMessage(prompt)}>{prompt}</button>
                 ))}
               </div>
             ) : null}
@@ -166,14 +175,15 @@ export function ChatWidget() {
           </div>
 
           <form className="chat-panel__composer" onSubmit={onSubmit}>
-            <button type="button" aria-label="Dosya ekle" className="chat-panel__attach"><AttachmentIcon size={20} /></button>
+            <button type="button" aria-label="Dosya ekle" className="chat-panel__attach" disabled={!historyReady || pending}><AttachmentIcon size={20} /></button>
             <label className="sr-only" htmlFor="chat-message">Mesajınız</label>
             <textarea
               id="chat-message"
               rows={1}
               value={input}
+              disabled={!historyReady || pending}
               onChange={(event) => setInput(event.target.value)}
-              placeholder={status === "HUMAN_ACTIVE" || status === "WAITING" ? "Temsilciye mesajınızı yazın" : "Ne oluşturmak istiyorsunuz?"}
+              placeholder={!historyReady ? "Görüşme geçmişi yükleniyor" : status === "HUMAN_ACTIVE" || status === "WAITING" ? "Temsilciye mesajınızı yazın" : "Ne oluşturmak istiyorsunuz?"}
               onKeyDown={(event) => {
                 if (event.key === "Enter" && !event.shiftKey) {
                   event.preventDefault();
@@ -181,7 +191,7 @@ export function ChatWidget() {
                 }
               }}
             />
-            <button type="submit" aria-label="Mesajı gönder" className="chat-panel__send" disabled={!input.trim() || pending}><SendIcon size={20} /></button>
+            <button type="submit" aria-label="Mesajı gönder" className="chat-panel__send" disabled={!historyReady || !input.trim() || pending}><SendIcon size={20} /></button>
           </form>
           <p className="chat-panel__notice">
             {status === "HUMAN_ACTIVE" || status === "WAITING"

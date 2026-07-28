@@ -5,7 +5,7 @@ import { blogPosts, faqItems, processSteps, projects, services } from "@/lib/con
 
 export default function HomePage() {
   return (
-    <>
+    <main>
       <section className="hero section-shell">
         <div className="container hero__grid">
           <div className="hero__content">
@@ -174,7 +174,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-    </>
+    </main>
   );
 }
 
