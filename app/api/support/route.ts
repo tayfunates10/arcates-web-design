@@ -1,15 +1,33 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth/session";
 import { databaseConfigured, db } from "@/lib/db";
+import { consumeRateLimit, rateLimitHeaders } from "@/lib/security/rate-limit";
+import { isTrustedBrowserRequest } from "@/lib/security/request";
 import { firstValidationError, supportTicketSchema } from "@/lib/validation";
 
 export async function POST(request: Request) {
+  if (!isTrustedBrowserRequest(request)) {
+    return NextResponse.json({ error: "İstek kaynağı doğrulanamadı." }, { status: 403 });
+  }
   if (!databaseConfigured()) {
     return NextResponse.json({ error: "Destek kayıt sistemi henüz yapılandırılmadı." }, { status: 503 });
   }
 
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Bu işlem için giriş yapmalısınız." }, { status: 401 });
+
+  const rateLimit = await consumeRateLimit({
+    scope: "support-create",
+    limit: 10,
+    windowMs: 15 * 60 * 1000,
+    identity: user.id,
+  });
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: "Kısa sürede çok fazla destek kaydı oluşturuldu. Daha sonra tekrar deneyin." },
+      { status: 429, headers: rateLimitHeaders(rateLimit) },
+    );
+  }
 
   let body: unknown;
   try {
@@ -73,5 +91,5 @@ export async function POST(request: Request) {
     success: true,
     reference: ticket.id,
     message: "Destek talebiniz oluşturuldu.",
-  }, { status: 201 });
+  }, { status: 201, headers: rateLimitHeaders(rateLimit) });
 }
