@@ -108,3 +108,15 @@ npm run check
 - Destek taleplerinde proje üyeliği sunucuda doğrulanır.
 - WhatsApp webhook olayları tekrar işlense bile ikinci mesaj kaydı oluşturmaz.
 - Chatbot fiyat, teslim tarihi veya hesap işlemi hakkında doğrulanmamış iddia üretmemesi için sınırlandırılmıştır.
+
+## Üretim öncesinde tamamlanacak işlemler
+
+Kod tabanı production build kontrolünden geçer; canlıya alınmadan önce hedef ortamda şu operasyonel adımlar tamamlanmalıdır:
+
+- Gerçek PostgreSQL veritabanının oluşturulması ve şemanın uygulanması
+- Owner hesabının seed edilmesi
+- Alan adı ve HTTPS ayarları
+- OpenAI ve WhatsApp anahtarlarının secret store üzerinden tanımlanması
+- Meta tarafında webhook aboneliğinin ve üretim telefon numarasının etkinleştirilmesi
+- Yedekleme, hata izleme, oran sınırlama ve uygulama metriklerinin hedef altyapıya bağlanması
+- Yasal metinlerin hukuk uzmanı tarafından doğrulanması
