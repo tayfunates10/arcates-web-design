@@ -159,7 +159,7 @@ jobs:
 
       - name: Build and push web image
         id: web_push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           target: runner
@@ -176,7 +176,7 @@ jobs:
 
       - name: Build and push migration image
         id: migrate_push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           target: migrate
