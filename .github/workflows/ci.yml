@@ -11,7 +11,7 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     services:
       postgres:
         image: postgres:16-alpine
@@ -33,6 +33,7 @@ jobs:
       ARCATES_OWNER_EMAIL: owner-ci@arcates.local
       ARCATES_OWNER_PASSWORD: ArcatesCiOwner2026
       RATE_LIMIT_SECRET: arcates-ci-rate-limit-secret
+      METRICS_TOKEN: arcates-ci-metrics-token
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -63,6 +64,18 @@ jobs:
         run: npm run db:seed
       - name: Run behavior tests
         run: npm test
+      - name: Validate operations scripts
+        run: bash -n ops/*.sh
+      - name: Validate compose stack
+        run: docker compose --env-file .env.production.example -f docker-compose.yml -f docker-compose.proxy.yml config --quiet
+      - name: Validate Caddy configuration
+        run: >-
+          docker run --rm
+          -e ARCATES_DOMAIN=arcates.example.com
+          -e ACME_EMAIL=admin@arcates.example.com
+          -v "$PWD/ops/Caddyfile:/etc/caddy/Caddyfile:ro"
+          caddy:2.10-alpine
+          caddy validate --config /etc/caddy/Caddyfile
       - name: Type check
         run: npm run typecheck
       - name: Production build
