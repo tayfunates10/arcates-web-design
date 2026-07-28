@@ -19,7 +19,7 @@ Next.js route veya webhook
           |
           +--> doğrulama ve yetkilendirme
           |
-          +--> konuşma / iş servisi
+          +--> ortak konuşma / iş servisi
           |
           +--> Prisma üzerinden PostgreSQL
           |
@@ -41,6 +41,7 @@ Next.js route veya webhook
 - Destek talebindeki proje kimliği sunucuda kullanıcının proje üyeliğine karşı doğrulanır.
 - Web ve WhatsApp kanalları aynı `Conversation` ve `Message` tablolarını kullanır.
 - Doğrulanmış `ChannelConnection`, WhatsApp kimliğini Arcates kullanıcısıyla eşleştirir.
+- Web ziyaretçisi giriş yapmadan önce HTTP-only anonim kimlik kullanır; girişten sonraki konuşmalar kullanıcı katılımcısıyla ilişkilendirilir.
 
 ## Konuşma motoru
 
@@ -51,6 +52,8 @@ Konuşma motorunun iki yanıt yolu vardır:
 
 Model çağrısından önce yalnızca kullanıcının erişebildiği bilgi belgeleri seçilir. İsteklerde `store: false` kullanılır. Üretilen mesajın kaynağı ve kullanılan bilgi başlıkları mesaj metadata alanında saklanır.
 
+Aynı motor hem `/api/chat` web sohbet route'u hem WhatsApp webhook işleyicisi tarafından çağrılır. Böylece hizmet açıklaması, bilgi erişim sınırları ve geri dönüş davranışı kanala göre ayrışmaz.
+
 ## WhatsApp işleme
 
 - GET isteği Meta webhook doğrulamasını yapar.
@@ -59,6 +62,7 @@ Model çağrısından önce yalnızca kullanıcının erişebildiği bilgi belge
 - Tekrarlanan webhook teslimatı ikinci bir konuşma mesajı oluşturmaz.
 - Gelen WhatsApp metni web widget'ıyla aynı konuşma motoruna gönderilir.
 - Çıkış mesajı yalnızca gerekli Cloud API ortam değişkenleri eksiksizse gönderilir.
+- Gönderim yapılandırılmamışsa gelen olay ve üretilen yanıt kaydı korunur; mesaj gönderilmiş gibi işaretlenmez.
 
 ## Dağıtım gereksinimleri
 
