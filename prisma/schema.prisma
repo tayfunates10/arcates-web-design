@@ -367,3 +367,17 @@ model AuditLog {
   @@index([entityType, entityId, createdAt])
   @@index([actorId, createdAt])
 }
+
+model RateLimitBucket {
+  id          String   @id @default(cuid())
+  identityHash String
+  scope       String
+  windowStart DateTime
+  count       Int      @default(1)
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([identityHash, scope, windowStart])
+  @@index([expiresAt])
+}
