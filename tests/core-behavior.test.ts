@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { authTokenEventType, generateAuthToken, hashAuthToken, parseAuthTokenPayload } from "../lib/auth/token-core";
 import { requestsHumanHandoff, createHandoffAcknowledgement } from "../lib/chat/handoff-core";
 import {
   chatMessageSchema,
   knowledgeDocumentSchema,
   leadSchema,
+  passwordResetSchema,
   registrationSchema,
   supportTicketSchema,
 } from "../lib/validation";
@@ -34,6 +36,34 @@ test("registration requires a strong password and explicit consent", () => {
     consent: "on",
   });
   assert.equal(weak.success, false);
+});
+
+test("password reset requires matching strong passwords and a bounded token", () => {
+  const token = generateAuthToken();
+  assert.equal(passwordResetSchema.safeParse({
+    token,
+    password: "YeniGuvenliParola2026",
+    passwordConfirm: "YeniGuvenliParola2026",
+  }).success, true);
+
+  assert.equal(passwordResetSchema.safeParse({
+    token,
+    password: "YeniGuvenliParola2026",
+    passwordConfirm: "FarkliGuvenliParola2026",
+  }).success, false);
+});
+
+test("authentication tokens are random, hash-only and typed", () => {
+  const first = generateAuthToken();
+  const second = generateAuthToken();
+  assert.notEqual(first, second);
+  assert.equal(first.length >= 40, true);
+  assert.equal(hashAuthToken(first).length, 64);
+  assert.equal(authTokenEventType("VERIFY_EMAIL", "user-1"), "VERIFY_EMAIL:user-1");
+
+  const parsed = parseAuthTokenPayload({ userId: "user-1", expiresAt: new Date(Date.now() + 60_000).toISOString() });
+  assert.equal(parsed?.userId, "user-1");
+  assert.equal(parseAuthTokenPayload({ userId: 1, expiresAt: "invalid" }), null);
 });
 
 test("lead and support payload limits reject incomplete records", () => {
