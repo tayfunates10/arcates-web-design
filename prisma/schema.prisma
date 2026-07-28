@@ -67,6 +67,10 @@ enum KnowledgeVisibility {
   INTERNAL
 }
 
+enum PendingActionType {
+  CREATE_SUPPORT_TICKET
+}
+
 model User {
   id                 String                    @id @default(cuid())
   email              String                    @unique
@@ -85,6 +89,7 @@ model User {
   auditLogs          AuditLog[]                @relation("AuditActor")
   channelConnections ChannelConnection[]
   channelLinkCodes   ChannelLinkCode[]
+  pendingActions     PendingAction[]
 }
 
 model Session {
@@ -216,6 +221,7 @@ model Conversation {
   participants   ConversationParticipant[]
   messages       Message[]
   supportTickets SupportTicket[]
+  pendingActions PendingAction[]
 
   @@unique([channel, externalId])
   @@index([organizationId, updatedAt])
@@ -275,6 +281,25 @@ model ChannelLinkCode {
 
   @@index([userId, channel, expiresAt])
   @@index([expiresAt, consumedAt])
+}
+
+model PendingAction {
+  id             String            @id @default(cuid())
+  userId         String
+  conversationId String
+  actionType     PendingActionType
+  tokenHash      String            @unique
+  payload        Json
+  expiresAt      DateTime
+  confirmedAt    DateTime?
+  cancelledAt    DateTime?
+  createdAt      DateTime          @default(now())
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversation   Conversation      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@index([conversationId, expiresAt])
+  @@index([expiresAt, confirmedAt, cancelledAt])
 }
 
 model SupportTicket {
