@@ -11,14 +11,14 @@ export const metadata: Metadata = {
 };
 
 type LoginPageProps = {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; verify?: string }>;
 };
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const currentUser = await getCurrentUser();
   if (currentUser) redirect(["ADMIN", "OWNER", "STAFF"].includes(currentUser.role) ? "/admin" : "/hesabim");
 
-  const { error } = await searchParams;
+  const { error, verify } = await searchParams;
 
   return (
     <main className="auth-shell">
@@ -30,6 +30,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         </div>
 
         {error ? <div className="form-alert form-alert--error" role="alert">{error}</div> : null}
+        {verify === "required" ? <div className="auth-inline-link"><Link href="/dogrulama-bekleniyor">Yeni doğrulama bağlantısı isteyin</Link></div> : null}
 
         <form action={loginAction} className="auth-form">
           <label>
@@ -40,6 +41,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             <span>Parola</span>
             <input name="password" type="password" autoComplete="current-password" minLength={12} maxLength={128} required />
           </label>
+          <div className="auth-inline-link auth-inline-link--right"><Link href="/parolami-unuttum">Parolamı unuttum</Link></div>
           <button className="button button--primary auth-submit" type="submit">Giriş Yap</button>
         </form>
 
