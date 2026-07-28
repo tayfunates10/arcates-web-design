@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSession } from "@/lib/auth/session";
 import { consumeAuthToken } from "@/lib/auth/token-store";
-import { databaseConfigured, db } from "@/lib/db";
+import { databaseConfigured } from "@/lib/db";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -11,26 +11,26 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL("/giris?error=Doğrulama+bağlantısı+geçersiz+veya+süresi+dolmuş.", request.url), 303);
   }
 
-  const user = await consumeAuthToken(token, "VERIFY_EMAIL");
-  if (!user) {
-    return NextResponse.redirect(new URL("/giris?error=Doğrulama+bağlantısı+geçersiz+veya+süresi+dolmuş.", request.url), 303);
-  }
-
-  await db.$transaction([
-    db.user.update({
+  const userId = await consumeAuthToken(token, "VERIFY_EMAIL", async (transaction, user) => {
+    await transaction.user.update({
       where: { id: user.id },
       data: { emailVerifiedAt: user.emailVerifiedAt ?? new Date() },
-    }),
-    db.auditLog.create({
+    });
+    await transaction.auditLog.create({
       data: {
         actorId: user.id,
         action: "EMAIL_VERIFIED",
         entityType: "User",
         entityId: user.id,
       },
-    }),
-  ]);
+    });
+    return user.id;
+  });
 
-  await createSession(user.id);
+  if (!userId) {
+    return NextResponse.redirect(new URL("/giris?error=Doğrulama+bağlantısı+geçersiz+veya+süresi+dolmuş.", request.url), 303);
+  }
+
+  await createSession(userId);
   return NextResponse.redirect(new URL("/hesabim?verified=1", request.url), 303);
 }
