@@ -6,6 +6,7 @@ const KEY_LENGTH = 64;
 const SCRYPT_COST = 16_384;
 const SCRYPT_BLOCK_SIZE = 8;
 const SCRYPT_PARALLELIZATION = 1;
+const FALLBACK_HASH = "scrypt$16384$8$1$arcates-login-fallback$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
 
 function deriveKey(password: string, salt: string) {
   return new Promise<Buffer>((resolve, reject) => {
@@ -51,4 +52,8 @@ export async function verifyPassword(password: string, storedHash: string) {
   const actual = await deriveKey(password, salt);
 
   return expected.length === actual.length && timingSafeEqual(expected, actual);
+}
+
+export function verifyPasswordWithFallback(password: string, storedHash?: string | null) {
+  return verifyPassword(password, storedHash || FALLBACK_HASH);
 }
