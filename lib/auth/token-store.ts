@@ -54,10 +54,14 @@ export async function consumeAuthToken(token: string, kind: AuthTokenKind) {
       },
     });
 
-    if (!record || record.processedAt || record.failedAt || !record.eventType.startsWith(`${kind}:`)) return null;
+    if (!record || record.processedAt || record.failedAt) return null;
 
     const payload = parseAuthTokenPayload(record.payload);
-    if (!payload || payload.expiresAt <= new Date()) {
+    if (
+      !payload
+      || record.eventType !== authTokenEventType(kind, payload.userId)
+      || payload.expiresAt <= new Date()
+    ) {
       await transaction.webhookEvent.update({
         where: { id: record.id },
         data: { failedAt: new Date() },
