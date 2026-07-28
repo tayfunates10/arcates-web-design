@@ -70,11 +70,14 @@ test("animated metrics settle once and retain stable formatted values", async ({
   const metrics = page.locator(".premium-metrics");
   await metrics.scrollIntoViewIfNeeded();
   const counters = metrics.locator(".animated-counter > span");
-  await expect(counters).toHaveCount(5);
-  await expect(counters.nth(0)).toHaveText("0.9 sn", { timeout: 5_000 });
-  const settledValues = await counters.allTextContents();
+  const expectedValues = ["0.9 sn", "92+", "%35+", "%98+", "%99.9"];
+  await expect(counters).toHaveCount(expectedValues.length);
+
+  for (const [index, value] of expectedValues.entries()) {
+    await expect(counters.nth(index)).toHaveText(value, { timeout: 5_000 });
+  }
 
   await page.locator("#services").scrollIntoViewIfNeeded();
   await metrics.scrollIntoViewIfNeeded();
-  expect(await counters.allTextContents()).toEqual(settledValues);
+  expect(await counters.allTextContents()).toEqual(expectedValues);
 });
