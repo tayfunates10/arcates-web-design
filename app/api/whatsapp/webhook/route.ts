@@ -2,6 +2,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { extractArcatesLinkCode, consumeChannelLinkCode } from "@/lib/channels/link-code";
+import { handleAccountChatAction } from "@/lib/chat/account-tools";
 import { generateAssistantReply } from "@/lib/chat/engine";
 import { databaseConfigured, db } from "@/lib/db";
 import { sendWhatsAppText, whatsappConfigured } from "@/lib/whatsapp/client";
@@ -195,13 +196,23 @@ async function processIncomingMessage(message: WhatsAppMessage, profileName?: st
             source: "CHANNEL_LINK_REJECTED",
             knowledgeTitles: [] as string[],
           }
-      : incomingText
-        ? await generateAssistantReply({ message: incomingText, channel: "WHATSAPP", userId: linkedUserId })
-        : {
-            text: "Bu mesaj türünü şu anda otomatik olarak işleyemiyorum. Talebinizi metin olarak gönderirseniz çözüm kapsamını belirleyebilirim.",
-            source: "UNSUPPORTED_MESSAGE_FALLBACK",
-            knowledgeTitles: [] as string[],
-          };
+      : incomingText && linkedUserId
+        ? await handleAccountChatAction({
+            message: incomingText,
+            userId: linkedUserId,
+            conversationId: conversation.id,
+          }) ?? await generateAssistantReply({
+            message: incomingText,
+            channel: "WHATSAPP",
+            userId: linkedUserId,
+          })
+        : incomingText
+          ? await generateAssistantReply({ message: incomingText, channel: "WHATSAPP" })
+          : {
+              text: "Bu mesaj türünü şu anda otomatik olarak işleyemiyorum. Talebinizi metin olarak gönderirseniz çözüm kapsamını belirleyebilirim.",
+              source: "UNSUPPORTED_MESSAGE_FALLBACK",
+              knowledgeTitles: [] as string[],
+            };
 
     let outboundMessageId: string | null = null;
     if (whatsappConfigured()) {
