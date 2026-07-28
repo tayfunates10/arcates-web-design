@@ -21,7 +21,7 @@
     "db:seed": "node prisma/seed.mjs"
   },
   "dependencies": {
-    "@prisma/client": "6.19.0",
+    "@prisma/client": "6.19.3",
     "next": "16.2.12",
     "react": "19.2.7",
     "react-dom": "19.2.7",
@@ -31,9 +31,13 @@
     "@types/node": "^26.1.1",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.0",
-    "prisma": "6.19.0",
+    "prisma": "6.19.3",
     "tsx": "^4.20.6",
     "typescript": "6.0.2"
+  },
+  "overrides": {
+    "postcss": "8.5.23",
+    "sharp": "0.35.3"
   },
   "engines": {
     "node": ">=22.0.0"
