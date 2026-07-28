@@ -44,6 +44,17 @@ export const chatMessageSchema = z.object({
   conversationId: z.string().trim().max(100).optional(),
 });
 
+export const knowledgeDocumentSchema = z.object({
+  title: z.string().trim().min(4, "Başlık en az 4 karakter olmalıdır.").max(160),
+  slug: z.string().trim().toLocaleLowerCase("tr-TR")
+    .min(3, "Slug en az 3 karakter olmalıdır.")
+    .max(160)
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Slug yalnızca küçük harf, sayı ve tire içerebilir."),
+  content: z.string().trim().min(40, "Bilgi içeriği en az 40 karakter olmalıdır.").max(30_000),
+  visibility: z.enum(["PUBLIC", "CUSTOMER", "PROJECT_PRIVATE", "INTERNAL"]),
+  projectId: z.string().trim().max(100).optional(),
+});
+
 export function firstValidationError(error: z.ZodError) {
   return error.issues[0]?.message ?? "Gönderilen bilgiler geçerli değil.";
 }
