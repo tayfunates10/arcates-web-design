@@ -5,11 +5,24 @@ Bu belge, doğrulanmış bir Arcates sürümünün GitHub Container Registry'ye 
 ## Sürüm ilkeleri
 
 - Üretim yayınları `vMAJOR.MINOR.PATCH` biçimindeki Git etiketleriyle başlatılır.
+- Yayın etiketi yalnızca `main` geçmişinde bulunan bir commiti gösterebilir.
+- Git etiketi ile `package.json` sürümü birebir eşleşmelidir.
 - Canlı sunucuda `latest` etiketi kullanılmaz.
 - Dağıtım için tam semantik sürüm etiketi veya değişmez `sha-*` etiketi kullanılır.
 - Web ve migration imajları aynı kaynak committen üretilir.
 - Veritabanı migration'ları ileri yönlüdür; otomatik şema geri dönüşü yapılmaz.
 - Her canlı yayın öncesinde veritabanı yedeği alınır.
+
+## Altyapı gereksinimleri
+
+- Docker Engine
+- `!reset` Compose merge etiketini destekleyen güncel Docker Compose v2
+- En az iki CPU çekirdeği ve uygulama/veritabanı yüküne uygun bellek
+- 80 ve 443 portları için erişim
+- Alan adına yönlendirilmiş DNS kaydı
+- Paket private ise yalnızca `read:packages` yetkili GHCR tokenı
+
+Repository ayarlarında `ARCATES_SITE_URL` Actions değişkeni tanımlanabilir. Tanımlanmazsa release imajının canonical, sitemap ve Open Graph URL'leri için `https://arcates.com` kullanılır.
 
 ## Yayın öncesi kontrol
 
@@ -21,7 +34,8 @@ bash ops/backup-postgres.sh
 Aşağıdaki koşullar sağlanmalıdır:
 
 - `main` kalite iş akışı yeşil
-- CodeQL taraması kritik açık içermiyor
+- Üretim bağımlılığı audit kapısı yüksek veya kritik açık göstermiyor
+- CodeQL taraması kritik açık içermiyor veya private repository nedeniyle çalışmıyorsa eşdeğer inceleme tamamlanmış
 - Sürüm numarası `package.json` içinde güncel
 - Yeni migration varsa temiz PostgreSQL üzerinde uygulanmış
 - E-posta, OpenAI ve WhatsApp yapılandırma değişiklikleri belgelenmiş
@@ -45,7 +59,14 @@ ghcr.io/tayfunates10/arcates-web-design-migrate:0.4.0
 
 Ayrıca tam sürüm, major/minor, major, `latest` ve değişmez `sha-*` etiketleri oluşturulur. Ön sürümlerde `latest` etiketi üretilmez.
 
-Public repository yayınlarında imaj digestleri için GitHub build provenance attestasyonu oluşturulur. İmaj digestleri workflow özetinden kaydedilmelidir.
+İki imaj için SBOM üretilir. Public repository yayınlarında imaj digestleri için GitHub build provenance attestasyonu oluşturulur. Workflow sonunda GitHub Release açılır ve aşağıdaki iki dosya release varlığı olarak eklenir:
+
+```text
+arcates-release-manifest.txt
+arcates-release-manifest.txt.sha256
+```
+
+Manifest; sürüm, kaynak commit, build sırasında kullanılan site URL'si ve iki imajın değişmez digestini içerir.
 
 ## Sunucuda yayın
 
@@ -75,10 +96,12 @@ Deploy scripti sırasıyla:
 1. Compose sözleşmesini doğrular.
 2. PostgreSQL ve iki sürüm imajını çeker.
 3. PostgreSQL sağlık kontrolünü bekler.
-4. Migration imajını tek seferlik çalıştırır.
-5. Web imajını başlatır.
+4. Migration imajını tek seferlik ve bağımlılıkları yeniden başlatmadan çalıştırır.
+5. Web imajını migration'ı yeniden tetiklemeden başlatır.
 6. Web healthcheck'i başarılı olana kadar bekler.
 7. İsteğe bağlı Caddy proxy servisini başlatır.
+
+`/api/health` çıktısındaki `version` alanı dağıtılan `ARCATES_RELEASE_TAG` değerini göstermelidir.
 
 ## Canlı smoke testi
 
@@ -91,6 +114,8 @@ bash ops/smoke-test.sh
 Smoke testi şunları doğrular:
 
 - HTTPS kullanımı
+- Credential, query, fragment veya alt path içermeyen origin URL'si
+- Local, private, link-local ve metadata hedeflerinin engellenmesi
 - `/api/health`
 - `/api/ready`
 - Ana sayfa ve temel güvenlik başlıkları
@@ -98,7 +123,7 @@ Smoke testi şunları doğrular:
 - `sitemap.xml`
 - Token sağlanırsa `/api/metrics`
 
-Aynı test GitHub Actions içindeki `Live Smoke Test` iş akışıyla manuel olarak çalıştırılabilir.
+Aynı test GitHub Actions içindeki `Live Smoke Test` iş akışıyla manuel olarak çalıştırılabilir. Workflow yalnızca `main` dalına alındıktan sonra GitHub arayüzünde manuel çalıştırılabilir.
 
 ## Web sürümüne geri dönüş
 
@@ -124,6 +149,7 @@ Her yayın için aşağıdakiler kaydedilmelidir:
 - Git etiketi
 - Merge veya release commit SHA'sı
 - Web ve migration imaj digestleri
+- Release manifesti ve SHA-256 checksum
 - Migration sonucu
 - Yedek dosyası ve SHA-256 checksum
 - Smoke test sonucu
