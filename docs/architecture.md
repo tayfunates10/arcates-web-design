@@ -1,42 +1,81 @@
 # Arcates Platform Architecture
 
-## Amaç
+## Sistem sınırları
 
-Arcates web sitesi, müşteri alanı, yönetim paneli, web sohbeti ve WhatsApp sohbeti aynı kimlik, konuşma ve yetki modelini kullanır.
+Arcates, dört ana sınırı olan bir Next.js App Router uygulamasıdır:
 
-## Kanal bağımsız konuşma akışı
+1. Genel erişimli pazarlama ve SEO sayfaları
+2. Kimliği doğrulanmış müşteri ve yönetim panelleri
+3. Sunucu tarafı konuşma ve iş API'leri
+4. Harici WhatsApp ve model sağlayıcı adaptörleri
+
+## İstek akışı
 
 ```text
-Web Chat ───────┐
-                ├── Channel Gateway ── Identity Resolver ── Conversation Engine
-WhatsApp ───────┘                                         │
-                                                          ├── Knowledge Retrieval
-                                                          ├── Authorized Tools
-                                                          ├── Human Handoff
-                                                          └── Audit Log
+Tarayıcı veya WhatsApp
+          |
+          v
+Next.js route veya webhook
+          |
+          +--> doğrulama ve yetkilendirme
+          |
+          +--> konuşma / iş servisi
+          |
+          +--> Prisma üzerinden PostgreSQL
+          |
+          +--> yapılandırıldıysa OpenAI veya WhatsApp adaptörü
 ```
 
-## Güvenlik sınırları
+## Kimlik doğrulama
 
-- Ziyaretçi görüşmeleri anonim oturum kimliğiyle tutulur.
-- Kullanıcı giriş yaptığında görüşme açık birleştirme işlemiyle hesaba bağlanır.
-- WhatsApp telefon kimliği tek kullanımlık doğrulama koduyla hesaba bağlanır.
-- Okuma ve değişiklik yapan araçlar ayrı yetkilere sahiptir.
-- Teklif onayı, profil değişikliği, destek kaydı ve dosya işlemleri açık onay ister.
-- Her araç çağrısı ve kimlik eşleştirme olayı denetim kaydına yazılır.
-- Webhook olayları benzersiz sağlayıcı kimliğiyle kaydedilir ve tekrar işlenmez.
+- Parolalar rastgele tuz ile Node.js `scrypt` kullanılarak hashlenir.
+- Tarayıcıya HTTP-only çerez içinde rastgele opak oturum belirteci verilir.
+- PostgreSQL'de yalnızca belirtecin SHA-256 özeti tutulur.
+- Oturumların sona erme zamanı vardır ve parola değiştirilmeden iptal edilebilir.
+- Müşteri ve admin sayfaları özel veri sorgusundan önce sunucu tarafında rol kontrolü yapar.
 
-## Uygulama katmanları
+## Veri sahipliği
 
-1. Next.js web uygulaması ve sunucu bileşenleri
-2. Route handler tabanlı BFF katmanı
-3. Konuşma motoru ve model sağlayıcı adaptörü
-4. PostgreSQL ve vektör arama
-5. Redis tabanlı kuyruk ve kısa süreli oturum verisi
-6. S3 uyumlu dosya depolama
-7. WhatsApp Cloud API adaptörü
-8. İzleme, hata raporlama ve audit log
+- Kullanıcılar kuruluşlara `OrganizationMember` üzerinden bağlanır.
+- Proje erişimi `ProjectMember` üzerinden verilir.
+- Destek talebindeki proje kimliği sunucuda kullanıcının proje üyeliğine karşı doğrulanır.
+- Web ve WhatsApp kanalları aynı `Conversation` ve `Message` tablolarını kullanır.
+- Doğrulanmış `ChannelConnection`, WhatsApp kimliğini Arcates kullanıcısıyla eşleştirir.
 
-## Mevcut durum
+## Konuşma motoru
 
-İlk kod turu genel siteyi, özel SVG sistemini, yerel chatbot yönlendirmesini, WhatsApp webhook doğrulama kabuğunu, SEO dosyalarını ve veri modeli sözleşmesini oluşturur. Kalıcı veri, kimlik doğrulama ve harici model bağlantısı sonraki uygulama turunda etkinleştirilecektir.
+Konuşma motorunun iki yanıt yolu vardır:
+
+1. `OPENAI_API_KEY` ve `OPENAI_MODEL` tanımlandığında temellendirilmiş OpenAI Responses API çağrısı
+2. Model yapılandırılmadığında veya geçici olarak kullanılamadığında deterministik kural motoru
+
+Model çağrısından önce yalnızca kullanıcının erişebildiği bilgi belgeleri seçilir. İsteklerde `store: false` kullanılır. Üretilen mesajın kaynağı ve kullanılan bilgi başlıkları mesaj metadata alanında saklanır.
+
+## WhatsApp işleme
+
+- GET isteği Meta webhook doğrulamasını yapar.
+- POST isteklerinde geçerli `x-hub-signature-256` HMAC imzası zorunludur.
+- Her gelen mesaj ve durum, sağlayıcı ve dış kimlik benzersizliğiyle `WebhookEvent` tablosuna yazılır.
+- Tekrarlanan webhook teslimatı ikinci bir konuşma mesajı oluşturmaz.
+- Gelen WhatsApp metni web widget'ıyla aynı konuşma motoruna gönderilir.
+- Çıkış mesajı yalnızca gerekli Cloud API ortam değişkenleri eksiksizse gönderilir.
+
+## Dağıtım gereksinimleri
+
+- Node.js 22 veya üzeri
+- PostgreSQL bağlantısı
+- Üretimde HTTPS
+- Güvenli ortam değişkeni yönetimi
+- Uygulama başlatılmadan önce veritabanı şema uygulaması veya migration
+- İlk veritabanı kurulumundan sonra owner seed komutu
+
+## Kalite kapıları
+
+GitHub Actions sırasıyla şunları çalıştırır:
+
+1. Bağımlılık kurulumu ve Prisma Client üretimi
+2. Prisma şema doğrulaması
+3. TypeScript tip kontrolü
+4. Next.js production build
+
+Bu kontrollerden herhangi biri başarısızken değişiklik üretime hazır kabul edilmez.
