@@ -25,6 +25,19 @@ export const registrationSchema = z.object({
   consent: z.literal("on", { message: "Gizlilik ve kullanım koşullarını kabul etmelisiniz." }),
 });
 
+export const emailRequestSchema = z.object({
+  email: normalizedEmail,
+});
+
+export const passwordResetSchema = z.object({
+  token: z.string().trim().min(32, "Parola sıfırlama bağlantısı geçersiz.").max(256),
+  password: strongPassword,
+  passwordConfirm: z.string().min(1, "Parola tekrarını girin.").max(128),
+}).refine((value) => value.password === value.passwordConfirm, {
+  message: "Parolalar birbiriyle eşleşmiyor.",
+  path: ["passwordConfirm"],
+});
+
 export const leadSchema = z.object({
   name: z.string().trim().min(2).max(100),
   company: z.string().trim().max(120).optional().default(""),
