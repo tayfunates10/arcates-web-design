@@ -207,7 +207,7 @@ test("owner can access every administration area and manage a customer project",
   const projectName = `QA Yönetilen Proje ${unique}`;
   const projectSlug = `qa-yonetilen-proje-${unique}`;
   await page.goto("/admin/projeler");
-  await page.getByLabel("Müşteri kuruluşu").selectOption({ label: /Arcates QA Customer/ });
+  await page.getByLabel("Müşteri kuruluşu").selectOption({ label: "Arcates QA Customer · 1 kullanıcı" });
   await page.getByLabel("Proje adı").fill(projectName);
   await page.getByLabel("Slug").fill(projectSlug);
   await page.getByLabel("Proje açıklaması").fill("Owner proje oluşturma ve güncelleme akışını doğrulayan tarayıcı testi.");
