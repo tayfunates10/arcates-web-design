@@ -1,0 +1,5 @@
+@media (prefers-reduced-motion: reduce) {
+  .hero-system__node {
+    opacity: 1 !important;
+  }
+}
