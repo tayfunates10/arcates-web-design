@@ -4,24 +4,22 @@ Arcates için geliştirilen performans, SEO, müşteri yönetimi, içerik yayın
 
 ## Uygulama kapsamı
 
-- Next.js App Router, React ve TypeScript altyapısı
-- Koyu, responsive Arcates tasarım sistemi
-- Emoji ve ikon fontu içermeyen özel SVG ikon kütüphanesi
-- Ana sayfa, hizmetler, projeler, blog, destek, SSS ve yasal sayfalar
-- PostgreSQL ve Prisma veri katmanı
-- Sürümlü Prisma SQL migration’ları
-- `scrypt` parola hash sistemi ve iptal edilebilir opak oturumlar
-- Müşteri kayıt, giriş, çıkış ve rol tabanlı yönetim erişimi
-- Veritabanından beslenen müşteri ve yönetici panelleri
-- Kalıcı teklif talepleri ve yetkili destek kayıtları
-- Web ve WhatsApp için ortak konuşma modeli
+- Next.js App Router, React ve TypeScript
+- Responsive koyu Arcates tasarım sistemi
+- Emoji ve ikon fontu içermeyen özel SVG ikonları
+- Hizmetler, projeler, blog, destek, SSS ve yasal sayfalar
+- PostgreSQL, Prisma ve sürümlü SQL migration’ları
+- `scrypt` parola hash’i ve iptal edilebilir opak oturumlar
+- Müşteri, proje, satış, destek ve konuşma yönetimi
 - Yönetilebilir blog, vaka çalışması ve SSS içerikleri
-- Bilgi tabanıyla temellendirilen OpenAI Responses API adaptörü
-- OpenAI kullanılamadığında güvenli kural motoru geri dönüşü
-- WhatsApp Cloud API webhook doğrulaması, HMAC kontrolü ve idempotency
-- Sitemap, robots, metadata, Open Graph ve JSON-LD altyapısı
-- Core Web Vitals ve erişilebilirlik odaklı CSS
-- Gerçek PostgreSQL, test, typecheck, production build ve Docker build kalite kapıları
+- Web ve WhatsApp için ortak konuşma motoru
+- OpenAI Responses API adaptörü ve güvenli kural motoru
+- İnsan temsilci aktarımı ve açık onay gerektiren hesap araçları
+- Metadata, canonical, Open Graph, JSON-LD, sitemap ve robots
+- PostgreSQL tabanlı oran sınırlama
+- Liveness, readiness ve korumalı Prometheus metrikleri
+- Docker, Compose ve isteğe bağlı Caddy HTTPS katmanı
+- PostgreSQL yedekleme ve kontrollü geri yükleme araçları
 
 ## Yerel kurulum
 
@@ -36,63 +34,54 @@ npm run dev
 
 Uygulama varsayılan olarak `http://localhost:3000` adresinde çalışır.
 
-Yeni bir şema değişikliği geliştirirken:
+## Veritabanı ve migration
+
+Yerel şema geliştirmesi:
 
 ```bash
 npm run db:migrate
 ```
 
-Canlı veya CI ortamında yalnızca kayıtlı migration’ları uygulamak için:
+CI ve canlı ortam:
 
 ```bash
 npm run db:deploy
+npm run db:status
 ```
 
-Üretim veritabanında `db:push` kullanılmamalıdır.
+Üretim veritabanında `db:push` kullanılmamalıdır. GitHub Actions, migration’ları temiz PostgreSQL’e uygular ve migration sonucu ile Prisma şeması arasında drift kontrolü yapar.
 
-## Zorunlu veritabanı ayarları
-
-`.env.local` içinde geçerli bir PostgreSQL bağlantısı tanımlayın:
+## Zorunlu ortam değişkenleri
 
 ```env
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
 DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/arcates?schema=public
 RATE_LIMIT_SECRET=uzun-ve-rastgele-bir-deger
-```
+METRICS_TOKEN=farkli-uzun-ve-rastgele-bir-deger
 
-İlk yönetici hesabı için:
-
-```env
 ARCATES_OWNER_NAME=Arcates Owner
 ARCATES_OWNER_EMAIL=owner@example.com
 ARCATES_OWNER_PASSWORD=GuvenliParola123
 ```
 
-Ardından:
+Owner hesabı ve doğrulanmış başlangıç içerikleri:
 
 ```bash
 npm run db:seed
 ```
 
-Seed komutu aynı e-posta için ikinci hesap açmaz; mevcut hesabı `OWNER` rolüyle günceller ve doğrulanmış başlangıç içeriklerini yeniden kullanılabilir biçimde oluşturur.
+Seed komutu tekrar çalıştırılabilir; aynı e-posta için ikinci owner hesabı oluşturmaz.
 
-## OpenAI yapılandırması
+## OpenAI
 
 ```env
 OPENAI_API_KEY=
 OPENAI_MODEL=
 ```
 
-Anahtar veya model tanımlı değilse chatbot çalışmaya devam eder ve doğrulanmış kural motorunu kullanır. Model çağrıları yalnızca sunucudan yapılır ve API isteğinde saklama kapatılır.
+Anahtar veya model tanımlı değilse chatbot doğrulanmış kural motoruyla çalışmaya devam eder. Model çağrıları yalnızca sunucudan yapılır ve API isteğinde saklama kapatılır.
 
-Chatbotun çalışma sırası:
-
-1. Kullanıcının erişim düzeyine uygun bilgi tabanı kayıtları seçilir.
-2. En ilgili kayıtlar yanıt bağlamına eklenir.
-3. OpenAI yapılandırılmışsa temellendirilmiş yanıt istenir.
-4. Model çağrısı başarısızsa kural motoru devreye girer.
-5. Yanıtın kaynağı ve kullanılan bilgi başlıkları mesaj metadata alanına yazılır.
-
-## WhatsApp Cloud API yapılandırması
+## WhatsApp Cloud API
 
 ```env
 WHATSAPP_GRAPH_API_VERSION=
@@ -108,42 +97,56 @@ Webhook adresi:
 /api/whatsapp/webhook
 ```
 
-Gelen webhook isteklerinde `x-hub-signature-256` doğrulaması zorunludur. Her mesaj önce idempotency event store’a yazılır, daha sonra ortak konuşma ve mesaj tablolarına işlenir.
+Webhook isteklerinde `x-hub-signature-256` doğrulaması zorunludur. Olaylar tekrar işlemeye karşı idempotency kaydıyla korunur.
 
 ## Docker ile üretim kurulumu
 
-Örnek üretim dosyasını kopyalayın ve değerleri değiştirin:
-
 ```bash
 cp .env.production.example .env.production
+chmod 600 .env.production
+bash ops/deploy.sh
 ```
 
-Ardından migration ve uygulama servislerini başlatın:
+Caddy kullanılmayacaksa:
 
 ```bash
-docker compose --env-file .env.production up -d --build
+WITH_PROXY=false bash ops/deploy.sh
 ```
 
-Servis sırası:
+Servis sırası PostgreSQL sağlık kontrolü, migration deploy, web readiness ve isteğe bağlı Caddy HTTPS şeklindedir.
 
-1. PostgreSQL sağlık kontrolünden geçer.
-2. `migrate` konteyneri kayıtlı migration’ları uygular ve kapanır.
-3. `web` konteyneri başlatılır.
-4. `/api/ready` başarılı olmadan uygulama sağlıklı kabul edilmez.
+Ayrıntılı dağıtım, yedekleme ve geri yükleme rehberi:
 
-Uygulama varsayılan olarak yalnızca `127.0.0.1:3000` üzerinde yayınlanır. İnternet erişimi Nginx, Caddy veya Cloudflare Tunnel gibi HTTPS sağlayan bir reverse proxy üzerinden verilmelidir.
+```text
+docs/operations.md
+```
+
+## Sağlık ve metrikler
+
+```bash
+curl -fsS https://alan-adiniz/api/health
+curl -fsS https://alan-adiniz/api/ready
+curl -fsS -H "Authorization: Bearer $METRICS_TOKEN" https://alan-adiniz/api/metrics
+```
+
+Metrik ucu kullanıcı verisi döndürmez; yalnızca operasyon sayaçları ve veritabanı sorgu süresini Prometheus metin biçiminde sunar.
+
+## PostgreSQL yedeği
+
+```bash
+bash ops/backup-postgres.sh
+```
+
+Kontrollü geri yükleme:
+
+```bash
+RESTORE_CONFIRM=ARCATES_RESTORE \
+  bash ops/restore-postgres.sh backups/arcates-YYYYMMDDTHHMMSSZ.dump
+```
+
+Her yedek için SHA-256 checksum oluşturulur. En az bir yedek kopyası uygulama sunucusu dışında tutulmalıdır.
 
 ## Kalite kontrolleri
-
-```bash
-npm run db:validate
-npm run db:deploy
-npm test
-npm run typecheck
-npm run build
-```
-
-Uygulama seviyesindeki kontrolleri birlikte çalıştırmak için:
 
 ```bash
 npm run check
@@ -152,31 +155,31 @@ npm run check
 GitHub Actions ayrıca:
 
 - Temiz PostgreSQL servisi başlatır
-- Migration’ları uygular
-- Şema drift kontrolü yapar
+- Migration deploy ve schema drift kontrolü yapar
 - Owner ve başlangıç içeriklerini seed eder
 - Kritik davranış testlerini çalıştırır
-- TypeScript ve Next.js production build’i doğrular
+- Operasyon scriptlerini ve Compose sözleşmesini doğrular
+- Caddy yapılandırmasını doğrular
+- TypeScript ve Next.js production build’i çalıştırır
 - Migration ve uygulama Docker hedeflerini ayrı ayrı derler
 
 ## Güvenlik ilkeleri
 
-- API anahtarları ve veritabanı bilgileri istemci koduna aktarılmaz.
-- Oturum belirteçlerinin yalnızca SHA-256 özeti veritabanında tutulur.
+- Gizli değerler istemci koduna aktarılmaz.
+- Oturum belirteçlerinin yalnızca SHA-256 özeti saklanır.
 - Parolalar rastgele tuz ile `scrypt` kullanılarak hashlenir.
 - Yönetim sayfaları rol kontrolü olmadan açılmaz.
-- Destek taleplerinde proje üyeliği sunucuda doğrulanır.
-- WhatsApp webhook olayları tekrar işlense bile ikinci mesaj kaydı oluşturmaz.
-- Chatbot fiyat, teslim tarihi veya hesap işlemi hakkında doğrulanmamış iddia üretmemesi için sınırlandırılmıştır.
-- Değişiklik yapan sohbet araçları açık kullanıcı onayı olmadan çalışmaz.
+- Değişiklik yapan chatbot işlemleri açık kullanıcı onayı ister.
+- PostgreSQL internete açılmaz.
+- Metrik ucu sabit zamanlı bearer token doğrulaması kullanır.
+- Geri yükleme scripti açık onay değişkeni olmadan çalışmaz.
 
-## Üretim öncesinde tamamlanacak işlemler
+## Canlı ortamda kalan işlemler
 
-- Alan adı, DNS ve HTTPS reverse proxy ayarları
-- Güçlü üretim parolalarının secret store üzerinden tanımlanması
-- Owner hesabının seed edilmesi
-- OpenAI ve WhatsApp üretim anahtarlarının tanımlanması
-- Meta webhook aboneliği ve üretim telefon numarasının etkinleştirilmesi
-- PostgreSQL otomatik yedekleme ve geri yükleme testi
-- Hata izleme, merkezi log ve uygulama metrikleri
-- Yasal metinlerin hukuk uzmanı tarafından doğrulanması
+- Gerçek alan adı ve DNS yönlendirmesi
+- Sunucu secret store veya korumalı `.env.production`
+- OpenAI ve Meta üretim anahtarları
+- WhatsApp üretim telefon numarası ve webhook aboneliği
+- Sunucu dışı otomatik yedek kopyası
+- Merkezi hata izleme ve log toplama
+- Hukuk uzmanı tarafından doğrulanmış yasal metinler
