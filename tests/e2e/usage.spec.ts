@@ -37,8 +37,6 @@ async function logout(page: Page) {
   ]);
 }
 
-test.describe.configure({ mode: "serial" });
-
 test("public sitemap pages render without broken navigation or runtime errors", async ({ page }) => {
   const runtimeErrors = monitorRuntimeErrors(page);
   const sitemapResponse = await page.request.get("/sitemap.xml");
@@ -57,7 +55,7 @@ test("public sitemap pages render without broken navigation or runtime errors", 
     const response = await page.goto(path, { waitUntil: "domcontentloaded" });
     expect(response, `No response for ${path}`).not.toBeNull();
     expect(response?.status(), `${path} returned an error`).toBeLessThan(400);
-    await expect(page.locator("main")).toBeVisible();
+    await expect(page.locator("main"), `${path} must expose exactly one visible main landmark`).toBeVisible();
     expect((await page.title()).trim().length, `${path} has no document title`).toBeGreaterThan(0);
     await expectNoHorizontalOverflow(page);
   }
