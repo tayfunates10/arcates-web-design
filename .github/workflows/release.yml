@@ -21,7 +21,7 @@ env:
   REGISTRY: ghcr.io
   WEB_IMAGE: ghcr.io/${{ github.repository }}
   MIGRATE_IMAGE: ghcr.io/${{ github.repository }}-migrate
-  RELEASE_SITE_URL: ${{ vars.ARCATES_SITE_URL || 'https://arcates.com' }}
+  RELEASE_SITE_URL: ${{ vars.ARCATES_SITE_URL }}
 
 jobs:
   publish:
@@ -34,6 +34,77 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+
+      - name: Validate release site URL
+        env:
+          ARCATES_SITE_URL: ${{ vars.ARCATES_SITE_URL }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          if [[ -z "${ARCATES_SITE_URL:-}" ]]; then
+            echo "Repository variable ARCATES_SITE_URL must be configured before publishing a release." >&2
+            exit 1
+          fi
+          node <<'NODE'
+          const net = require("node:net");
+          const raw = process.env.ARCATES_SITE_URL;
+          let url;
+          try {
+            url = new URL(raw);
+          } catch {
+            console.error("ARCATES_SITE_URL must be a valid absolute URL.");
+            process.exit(1);
+          }
+
+          if (url.protocol !== "https:") {
+            console.error("ARCATES_SITE_URL must use HTTPS.");
+            process.exit(1);
+          }
+          if (raw !== url.origin) {
+            console.error("ARCATES_SITE_URL must be an HTTPS origin without a path, query, fragment, credentials, or trailing slash.");
+            process.exit(1);
+          }
+          if (url.port) {
+            console.error("ARCATES_SITE_URL must not include a custom port.");
+            process.exit(1);
+          }
+
+          const host = url.hostname.toLowerCase();
+          const ipVersion = net.isIP(host);
+          const blockedName =
+            host === "localhost" ||
+            host.endsWith(".localhost") ||
+            host.endsWith(".local") ||
+            host.endsWith(".internal");
+          let blockedIp = false;
+
+          if (ipVersion === 4) {
+            const [a, b] = host.split(".").map(Number);
+            blockedIp =
+              a === 0 ||
+              a === 10 ||
+              a === 127 ||
+              (a === 169 && b === 254) ||
+              (a === 172 && b >= 16 && b <= 31) ||
+              (a === 192 && b === 168);
+          } else if (ipVersion === 6) {
+            blockedIp =
+              host === "::1" ||
+              host.startsWith("fc") ||
+              host.startsWith("fd") ||
+              host.startsWith("fe8") ||
+              host.startsWith("fe9") ||
+              host.startsWith("fea") ||
+              host.startsWith("feb");
+          }
+
+          if (blockedName || blockedIp) {
+            console.error("ARCATES_SITE_URL must point to a public production hostname.");
+            process.exit(1);
+          }
+
+          console.log(`Validated release site URL: ${url.origin}`);
+          NODE
 
       - name: Verify tagged release source and version
         if: startsWith(github.ref, 'refs/tags/v')
