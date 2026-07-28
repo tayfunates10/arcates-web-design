@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireRole } from "@/lib/auth/session";
+import { readCmsEnvelope } from "@/lib/cms/content";
 import { db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -13,13 +14,14 @@ export const metadata: Metadata = {
 export default async function AdminDashboardPage() {
   const user = await requireRole(["STAFF", "ADMIN", "OWNER"]);
 
-  const [leadCount, activeProjectCount, openTicketCount, activeConversationCount, knowledgeCount, organizationCount, latestLeads, latestTickets, latestConversations] = await db.$transaction([
+  const [leadCount, activeProjectCount, openTicketCount, activeConversationCount, knowledgeCount, organizationCount, contentDocuments, latestLeads, latestTickets, latestConversations] = await db.$transaction([
     db.lead.count({ where: { status: "NEW" } }),
     db.project.count({ where: { status: { notIn: ["PAUSED", "COMPLETED"] } } }),
     db.supportTicket.count({ where: { status: { notIn: ["RESOLVED", "CLOSED"] } } }),
     db.conversation.count({ where: { status: { in: ["AI_ACTIVE", "HUMAN_ACTIVE", "WAITING"] } } }),
     db.knowledgeDocument.count(),
     db.organization.count(),
+    db.knowledgeDocument.findMany({ select: { metadata: true }, take: 500 }),
     db.lead.findMany({ orderBy: { createdAt: "desc" }, take: 5, include: { contact: true } }),
     db.supportTicket.findMany({ orderBy: { updatedAt: "desc" }, take: 5, include: { requester: true } }),
     db.conversation.findMany({
@@ -28,6 +30,7 @@ export default async function AdminDashboardPage() {
       include: { contact: true, messages: { orderBy: { createdAt: "desc" }, take: 1 } },
     }),
   ]);
+  const cmsCount = contentDocuments.filter((document) => Boolean(readCmsEnvelope(document.metadata))).length;
 
   return (
     <main className="portal-shell">
@@ -42,9 +45,10 @@ export default async function AdminDashboardPage() {
             <Link href="/admin/destek"><span>05</span>Destek</Link>
             <Link href="/admin/konusmalar"><span>06</span>Konuşmalar</Link>
             <Link href="/admin/bilgi-tabani"><span>07</span>Bilgi Tabanı</Link>
-            <Link href="/"><span>08</span>Siteyi Görüntüle</Link>
+            <Link href="/admin/icerik"><span>08</span>İçerik Yönetimi</Link>
+            <Link href="/"><span>09</span>Siteyi Görüntüle</Link>
           </nav>
-          <form action="/cikis" method="post"><button type="submit"><span>09</span>Güvenli Çıkış</button></form>
+          <form action="/cikis" method="post"><button type="submit"><span>10</span>Güvenli Çıkış</button></form>
         </aside>
 
         <div className="portal-main">
@@ -102,12 +106,12 @@ export default async function AdminDashboardPage() {
 
           <section className="portal-wide-card" id="projeler">
             <div className="portal-wide-card__header">
-              <div><span className="eyebrow">Sistem sağlığı</span><h2>Çekirdek servisler</h2></div>
-              <Link className="text-link" href="/admin/bilgi-tabani">{knowledgeCount} bilgi kaynağını yönet</Link>
+              <div><span className="eyebrow">Yayın ve bilgi sistemi</span><h2>Yönetilebilir kaynaklar</h2></div>
+              <Link className="text-link" href="/admin/icerik">{cmsCount} yayın içeriğini yönet</Link>
             </div>
-            {["Next.js web uygulaması", "PostgreSQL veri katmanı", "Oturum ve yetki sistemi", "Ortak AI konuşma motoru"].map((service) => (
-              <div className="health-row" key={service}><span>{service}</span><strong>Çalışıyor</strong></div>
-            ))}
+            <div className="health-row"><span>Genel bilgi tabanı</span><strong>{knowledgeCount} kayıt</strong></div>
+            <div className="health-row"><span>Blog, vaka ve SSS</span><strong>{cmsCount} kayıt</strong></div>
+            <div className="health-row"><span>PostgreSQL veri katmanı</span><strong>Çalışıyor</strong></div>
           </section>
         </div>
       </div>
