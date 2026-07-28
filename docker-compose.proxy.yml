@@ -1,0 +1,24 @@
+services:
+  proxy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    environment:
+      ARCATES_DOMAIN: ${ARCATES_DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./ops/Caddyfile:/etc/caddy/Caddyfile:ro
+      - arcates_caddy_data:/data
+      - arcates_caddy_config:/config
+    depends_on:
+      web:
+        condition: service_healthy
+    networks:
+      - arcates_proxy
+
+volumes:
+  arcates_caddy_data:
+  arcates_caddy_config:
