@@ -50,6 +50,8 @@ jobs:
           status=$?
           tail -n 120 install.log
           exit $status
+      - name: Validate Prisma package versions
+        run: npm run check:prisma-versions
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high
       - name: Validate database schema
