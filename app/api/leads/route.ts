@@ -1,10 +1,23 @@
 import { NextResponse } from "next/server";
 import { databaseConfigured, db } from "@/lib/db";
+import { consumeRateLimit, rateLimitHeaders } from "@/lib/security/rate-limit";
+import { isTrustedBrowserRequest } from "@/lib/security/request";
 import { firstValidationError, leadSchema } from "@/lib/validation";
 
 export async function POST(request: Request) {
+  if (!isTrustedBrowserRequest(request)) {
+    return NextResponse.json({ error: "İstek kaynağı doğrulanamadı." }, { status: 403 });
+  }
   if (!databaseConfigured()) {
     return NextResponse.json({ error: "Teklif kayıt sistemi henüz yapılandırılmadı." }, { status: 503 });
+  }
+
+  const rateLimit = await consumeRateLimit({ scope: "public-lead", limit: 5, windowMs: 60 * 60 * 1000 });
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: "Kısa sürede çok fazla proje talebi gönderildi. Daha sonra tekrar deneyin." },
+      { status: 429, headers: rateLimitHeaders(rateLimit) },
+    );
   }
 
   let body: unknown;
@@ -49,5 +62,5 @@ export async function POST(request: Request) {
     success: true,
     reference: lead.id,
     message: "Proje talebiniz güvenli biçimde kaydedildi.",
-  }, { status: 201 });
+  }, { status: 201, headers: rateLimitHeaders(rateLimit) });
 }
