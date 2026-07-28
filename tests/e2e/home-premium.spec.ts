@@ -81,3 +81,17 @@ test("animated metrics settle once and retain stable formatted values", async ({
   await metrics.scrollIntoViewIfNeeded();
   expect(await counters.allTextContents()).toEqual(expectedValues);
 });
+
+test("capture deterministic desktop and mobile homepage review images", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto("/", { waitUntil: "networkidle" });
+  await expect(page.locator("main.home-v2")).toBeVisible();
+  await page.screenshot({ path: "test-results/playwright/arcates-home-desktop.png", fullPage: true });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/", { waitUntil: "networkidle" });
+  await expect(page.locator("main.home-v2")).toBeVisible();
+  await page.screenshot({ path: "test-results/playwright/arcates-home-mobile.png", fullPage: true });
+});
