@@ -34,10 +34,14 @@ services:
     build:
       context: .
       target: runner
+      args:
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL}
+        APP_VERSION: ${ARCATES_RELEASE_TAG:-development}
     restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-arcates}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-arcates}?schema=public
       NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL}
+      APP_VERSION: ${ARCATES_RELEASE_TAG:-development}
       RATE_LIMIT_SECRET: ${RATE_LIMIT_SECRET}
       METRICS_TOKEN: ${METRICS_TOKEN}
       RESEND_API_KEY: ${RESEND_API_KEY:-}

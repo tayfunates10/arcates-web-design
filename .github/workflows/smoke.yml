@@ -1,0 +1,43 @@
+name: Live Smoke Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "HTTPS address to verify, for example https://arcates.com"
+        required: true
+        type: string
+      allow_http:
+        description: "Allow HTTP for local or isolated test environments"
+        required: false
+        default: false
+        type: boolean
+      allow_private_target:
+        description: "Allow localhost or private network targets"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: live-smoke-${{ inputs.base_url }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Run smoke checks
+        env:
+          BASE_URL: ${{ inputs.base_url }}
+          ALLOW_HTTP: ${{ inputs.allow_http }}
+          ALLOW_PRIVATE_TARGET: ${{ inputs.allow_private_target }}
+          METRICS_TOKEN: ${{ secrets.METRICS_TOKEN }}
+        run: bash ops/smoke-test.sh

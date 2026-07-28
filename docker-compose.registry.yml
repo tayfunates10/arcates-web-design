@@ -1,0 +1,10 @@
+services:
+  migrate:
+    image: ${ARCATES_MIGRATE_IMAGE:?ARCATES_MIGRATE_IMAGE must be set}:${ARCATES_RELEASE_TAG:?ARCATES_RELEASE_TAG must be set}
+    build: !reset null
+    pull_policy: always
+
+  web:
+    image: ${ARCATES_WEB_IMAGE:?ARCATES_WEB_IMAGE must be set}:${ARCATES_RELEASE_TAG:?ARCATES_RELEASE_TAG must be set}
+    build: !reset null
+    pull_policy: always

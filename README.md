@@ -20,6 +20,7 @@ Arcates için geliştirilen performans, SEO, müşteri yönetimi, içerik yayın
 - Liveness, readiness ve korumalı Prometheus metrikleri
 - Docker, Compose ve isteğe bağlı Caddy HTTPS katmanı
 - PostgreSQL yedekleme ve kontrollü geri yükleme araçları
+- GHCR sürüm imajları, build provenance, CodeQL ve Dependabot
 
 ## Yerel kurulum
 
@@ -99,7 +100,7 @@ Webhook adresi:
 
 Webhook isteklerinde `x-hub-signature-256` doğrulaması zorunludur. Olaylar tekrar işlemeye karşı idempotency kaydıyla korunur.
 
-## Docker ile üretim kurulumu
+## Kaynak koddan Docker kurulumu
 
 ```bash
 cp .env.production.example .env.production
@@ -115,13 +116,40 @@ WITH_PROXY=false bash ops/deploy.sh
 
 Servis sırası PostgreSQL sağlık kontrolü, migration deploy, web readiness ve isteğe bağlı Caddy HTTPS şeklindedir.
 
-Ayrıntılı dağıtım, yedekleme ve geri yükleme rehberi:
+## Sürümlü GHCR yayını
+
+`vMAJOR.MINOR.PATCH` biçiminde Git etiketi gönderildiğinde GitHub Actions aşağıdaki imajları üretir:
 
 ```text
-docs/operations.md
+ghcr.io/tayfunates10/arcates-web-design:<sürüm>
+ghcr.io/tayfunates10/arcates-web-design-migrate:<sürüm>
 ```
 
-## Sağlık ve metrikler
+Web ve migration imajları ayrı digestlerle yayınlanır. Public repository yayınlarında GitHub build provenance attestasyonu oluşturulur.
+
+Sürüm imajını sunucuya kurmak için:
+
+```bash
+bash ops/backup-postgres.sh
+bash ops/deploy-release.sh 0.4.0
+```
+
+Önceki web imajına kontrollü dönüş:
+
+```bash
+ROLLBACK_CONFIRM=ARCATES_ROLLBACK \
+  bash ops/rollback-release.sh 0.3.0
+```
+
+Rollback veritabanı migration’larını geri almaz. Önceki web sürümü mevcut şemayla uyumlu olmalıdır.
+
+Ayrıntılı yayın prosedürü:
+
+```text
+docs/release.md
+```
+
+## Sağlık, metrik ve smoke testleri
 
 ```bash
 curl -fsS https://alan-adiniz/api/health
@@ -129,7 +157,15 @@ curl -fsS https://alan-adiniz/api/ready
 curl -fsS -H "Authorization: Bearer $METRICS_TOKEN" https://alan-adiniz/api/metrics
 ```
 
-Metrik ucu kullanıcı verisi döndürmez; yalnızca operasyon sayaçları ve veritabanı sorgu süresini Prometheus metin biçiminde sunar.
+Canlı doğrulama:
+
+```bash
+BASE_URL=https://alan-adiniz \
+METRICS_TOKEN="$METRICS_TOKEN" \
+npm run smoke
+```
+
+Smoke testi HTTPS, liveness, readiness, ana sayfa, güvenlik başlıkları, robots, sitemap ve isteğe bağlı metrik uçlarını doğrular. Aynı kontrol GitHub Actions içindeki `Live Smoke Test` iş akışından manuel olarak çalıştırılabilir.
 
 ## PostgreSQL yedeği
 
@@ -146,10 +182,16 @@ RESTORE_CONFIRM=ARCATES_RESTORE \
 
 Her yedek için SHA-256 checksum oluşturulur. En az bir yedek kopyası uygulama sunucusu dışında tutulmalıdır.
 
-## Kalite kontrolleri
+Ayrıntılı operasyon rehberi:
+
+```text
+docs/operations.md
+```
+
+## Kalite ve tedarik zinciri kontrolleri
 
 ```bash
-npm run check
+npm run release:check
 ```
 
 GitHub Actions ayrıca:
@@ -158,26 +200,34 @@ GitHub Actions ayrıca:
 - Migration deploy ve schema drift kontrolü yapar
 - Owner ve başlangıç içeriklerini seed eder
 - Kritik davranış testlerini çalıştırır
-- Operasyon scriptlerini ve Compose sözleşmesini doğrular
+- Operasyon scriptlerini ve iki Compose dağıtım biçimini doğrular
 - Caddy yapılandırmasını doğrular
 - TypeScript ve Next.js production build’i çalıştırır
 - Migration ve uygulama Docker hedeflerini ayrı ayrı derler
+- CodeQL ile JavaScript ve TypeScript güvenlik taraması yapar
+- Dependabot ile npm, Docker ve GitHub Actions bağımlılıklarını izler
+- Sürüm etiketlerinde GHCR imajı ve provenance üretir
 
 ## Güvenlik ilkeleri
 
 - Gizli değerler istemci koduna aktarılmaz.
-- Oturum belirteçlerinin yalnızca SHA-256 özeti saklanır.
+- Oturum ve hesap kurtarma tokenlarının yalnızca SHA-256 özeti saklanır.
 - Parolalar rastgele tuz ile `scrypt` kullanılarak hashlenir.
 - Yönetim sayfaları rol kontrolü olmadan açılmaz.
 - Değişiklik yapan chatbot işlemleri açık kullanıcı onayı ister.
 - PostgreSQL internete açılmaz.
 - Metrik ucu sabit zamanlı bearer token doğrulaması kullanır.
-- Geri yükleme scripti açık onay değişkeni olmadan çalışmaz.
+- Geri yükleme ve rollback scriptleri açık onay değişkeni olmadan çalışmaz.
+- Canlı dağıtımda değişmez semantik sürüm veya `sha-*` etiketi kullanılır.
+
+Güvenlik açığı bildirimleri için `SECURITY.md` dosyasını izleyin. Hassas bulguları herkese açık issue olarak paylaşmayın.
 
 ## Canlı ortamda kalan işlemler
 
 - Gerçek alan adı ve DNS yönlendirmesi
 - Sunucu secret store veya korumalı `.env.production`
+- GHCR paket erişim politikası
+- Resend alan adı doğrulaması
 - OpenAI ve Meta üretim anahtarları
 - WhatsApp üretim telefon numarası ve webhook aboneliği
 - Sunucu dışı otomatik yedek kopyası

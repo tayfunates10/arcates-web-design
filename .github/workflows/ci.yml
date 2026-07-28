@@ -36,13 +36,16 @@ jobs:
       METRICS_TOKEN: arcates-ci-metrics-token
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 22
+          package-manager-cache: false
       - name: Install dependencies
         run: npm install --no-audit --no-fund
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
       - name: Validate database schema
         run: npm run db:validate
       - name: Deploy migrations to clean PostgreSQL
@@ -66,8 +69,10 @@ jobs:
         run: npm test
       - name: Validate operations scripts
         run: bash -n ops/*.sh
-      - name: Validate compose stack
+      - name: Validate source-build compose stack
         run: docker compose --env-file .env.production.example -f docker-compose.yml -f docker-compose.proxy.yml config --quiet
+      - name: Validate registry-release compose stack
+        run: docker compose --env-file .env.production.example -f docker-compose.yml -f docker-compose.registry.yml -f docker-compose.proxy.yml config --quiet
       - name: Validate Caddy configuration
         run: >-
           docker run --rm
@@ -89,10 +94,15 @@ jobs:
       - name: Build migration container
         run: docker build --target migrate -t arcates-migrate:ci .
       - name: Build application container
-        run: docker build --target runner -t arcates-web:ci .
+        run: >-
+          docker build
+          --target runner
+          --build-arg NEXT_PUBLIC_SITE_URL=http://localhost:3000
+          --build-arg APP_VERSION=ci-${GITHUB_SHA::12}
+          -t arcates-web:ci .
       - name: Upload verification logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: verification-logs
           path: |
