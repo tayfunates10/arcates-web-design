@@ -38,12 +38,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
       - name: Setup Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: 22
           package-manager-cache: false
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        shell: bash
+        run: |
+          set +e
+          npm install --no-audit --no-fund > install.log 2>&1
+          status=$?
+          tail -n 120 install.log
+          exit $status
+      - name: Validate Prisma package versions
+        run: npm run check:prisma-versions
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high
       - name: Validate database schema
@@ -57,8 +65,8 @@ jobs:
         run: |
           set +e
           npx prisma migrate diff \
-            --from-url "$DATABASE_URL" \
-            --to-schema-datamodel prisma/schema.prisma \
+            --from-config-datasource \
+            --to-schema prisma/schema.prisma \
             --exit-code > migration-drift.log 2>&1
           status=$?
           cat migration-drift.log
@@ -106,6 +114,7 @@ jobs:
         with:
           name: verification-logs
           path: |
+            install.log
             build.log
             migration-drift.log
           if-no-files-found: warn
