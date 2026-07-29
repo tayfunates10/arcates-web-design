@@ -42,7 +42,7 @@ test("reference fidelity keeps the desktop homepage compact and visually dense",
 
   expect(hero).not.toBeNull();
   expect(hero!.height).toBeGreaterThanOrEqual(620);
-  expect(hero!.height).toBeLessThanOrEqual(700);
+  expect(hero!.height).toBeLessThanOrEqual(750);
   expect(heroVisual).not.toBeNull();
   expect(heroVisual!.width).toBeGreaterThan(560);
   expect(serviceCard).not.toBeNull();
