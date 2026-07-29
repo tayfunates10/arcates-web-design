@@ -1,3 +1,7 @@
+:root {
+  --reference-section-space: clamp(46px, 3.7vw, 54px);
+}
+
 @media (min-width: 1121px) {
   .premium-hero {
     min-height: 620px;
@@ -6,5 +10,111 @@
 
   .hero-system--premium {
     max-width: 650px;
+  }
+
+  .premium-discovery__layout {
+    min-height: 330px;
+  }
+
+  .premium-discovery__content h2 {
+    font-size: clamp(2rem, 3vw, 2.65rem);
+  }
+
+  .premium-accordion__item button {
+    min-height: 45px;
+  }
+
+  .project-visual {
+    height: 220px;
+  }
+
+  .project-visual__browser {
+    height: 71%;
+  }
+
+  .premium-project-card__body {
+    padding: 15px 17px 16px;
+  }
+
+  .premium-project-card p {
+    min-height: 42px;
+    margin-bottom: 10px;
+  }
+
+  .premium-process-card {
+    min-height: 145px;
+    padding: 14px 15px;
+  }
+
+  .premium-process-card__icon {
+    width: 35px;
+    height: 35px;
+    margin: 9px 0 11px;
+  }
+
+  .premium-process-card p {
+    line-height: 1.44;
+  }
+
+  .premium-metrics {
+    padding-top: 20px;
+    padding-bottom: 34px;
+  }
+
+  .premium-metric-card {
+    min-height: 78px;
+    padding: 11px 14px;
+  }
+
+  .article-visual {
+    height: 160px;
+  }
+
+  .premium-article-card__body {
+    padding: 13px 15px 15px;
+  }
+
+  .premium-article-card h3 {
+    min-height: 38px;
+    margin: 8px 0 10px;
+    font-size: .87rem;
+  }
+
+  .premium-faq__questions {
+    padding: 20px;
+  }
+
+  .premium-faq__questions h2 {
+    margin-bottom: 15px;
+  }
+
+  .premium-contact-card {
+    min-height: 290px;
+    padding: 22px 27px;
+  }
+
+  .message-visual {
+    min-height: 175px;
+  }
+
+  .premium-final-cta__inner {
+    min-height: 230px;
+    padding: 29px 40px;
+  }
+
+  .premium-final-cta h2 {
+    font-size: clamp(2rem, 3.1vw, 2.75rem);
+  }
+
+  .cta-system svg {
+    max-height: 190px;
+  }
+
+  .site-footer__top {
+    padding: 36px 0 27px;
+  }
+
+  .site-footer__bottom {
+    min-height: 52px;
   }
 }
