@@ -29,6 +29,30 @@ test("premium homepage remains stable from 360 to 1920 pixels", async ({ page })
   }
 });
 
+test("reference fidelity keeps the desktop homepage compact and visually dense", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto("/", { waitUntil: "networkidle" });
+
+  const hero = await page.locator(".premium-hero").boundingBox();
+  const heroVisual = await page.locator(".hero-system--premium").boundingBox();
+  const serviceCard = await page.locator(".premium-service-card").first().boundingBox();
+  const sectionPadding = await page.locator("#services").evaluate((element) => Number.parseFloat(getComputedStyle(element).paddingTop));
+  const footerMargin = await page.locator(".site-footer").evaluate((element) => Number.parseFloat(getComputedStyle(element).marginTop));
+
+  expect(hero).not.toBeNull();
+  expect(hero!.height).toBeGreaterThanOrEqual(620);
+  expect(hero!.height).toBeLessThanOrEqual(700);
+  expect(heroVisual).not.toBeNull();
+  expect(heroVisual!.width).toBeGreaterThan(560);
+  expect(serviceCard).not.toBeNull();
+  expect(serviceCard!.height).toBeGreaterThanOrEqual(195);
+  expect(serviceCard!.height).toBeLessThanOrEqual(230);
+  expect(sectionPadding).toBeLessThanOrEqual(80);
+  expect(footerMargin).toBe(0);
+  await expectNoHorizontalOverflow(page);
+});
+
 test("premium accordions keep one item open and expose correct ARIA state", async ({ page }) => {
   await page.goto("/#discovery");
   const panel = page.locator(".premium-discovery__panel .premium-accordion");
