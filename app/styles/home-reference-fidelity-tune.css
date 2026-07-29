@@ -1,0 +1,10 @@
+@media (min-width: 1121px) {
+  .premium-hero {
+    min-height: 620px;
+    padding: 100px 0 40px;
+  }
+
+  .hero-system--premium {
+    max-width: 650px;
+  }
+}
