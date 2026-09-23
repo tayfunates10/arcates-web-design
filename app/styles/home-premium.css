@@ -147,7 +147,8 @@ body {
 .premium-accordion__panel > div { overflow: hidden; }
 .premium-accordion__panel p { margin: 0; padding: 0 16px 17px 54px; font-size: .78rem; line-height: 1.65; }
 
-.premium-project-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.premium-project-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+.premium-project-grid > .premium-project-card { width: min(100%, 900px); margin-inline: auto; }
 .premium-project-card { overflow: hidden; border: 1px solid var(--border); border-radius: 12px; background: rgba(8,24,45,.68); transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease; }
 .premium-project-card:hover { transform: translateY(-5px); border-color: var(--border-hover); box-shadow: 0 24px 54px rgba(0,0,0,.25); }
 .project-visual { height: 230px; position: relative; overflow: hidden; display: grid; place-items: center; background: radial-gradient(circle at 50% 70%, rgba(39,212,255,.14), transparent 52%), linear-gradient(145deg, #071a30, #04101f); }
