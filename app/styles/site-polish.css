@@ -951,3 +951,11 @@ section[id] {
     display: none;
   }
 }
+
+
+/* Visual QA round 6: keep mobile request forms obstruction-free. */
+@media (max-width: 760px) {
+  body:has(.request-layout) .chat-widget {
+    display: none;
+  }
+}
