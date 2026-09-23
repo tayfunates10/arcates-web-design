@@ -3,7 +3,7 @@ export const siteConfig = {
   legalName: "Arcates Web Solutions",
   description:
     "Kurumsal web siteleri, özel yazılımlar, e-ticaret, SaaS ve yapay zekâ otomasyonları geliştiren dijital mühendislik stüdyosu.",
-  url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://arcates.com",
+  url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://arcatesyazilim.com",
   locale: "tr_TR",
   email: "hello@arcates.com",
 };
