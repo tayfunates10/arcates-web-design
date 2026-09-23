@@ -7,7 +7,11 @@ import { siteConfig } from "@/lib/site";
 export function ProjectsPage({ projects }: { projects: CaseStudyEntry[] }) {
   return (
     <>
-      <PageHero eyebrow="Projelerimiz" title="Sorunu, sistemi ve sonucu birlikte gösteren vaka çalışmaları." description="Her proje; başlangıç problemi, alınan kararlar, teknik yaklaşım ve doğrulanabilir çıktılar üzerinden anlatılır." />
+      <PageHero
+        eyebrow={projects.length === 1 ? "Öne çıkan ürün" : "Projelerimiz"}
+        title={projects.length === 1 ? "Nexora AgentOS: ajanları gerçek iş akışına bağlayan platform." : "Sorunu, sistemi ve sonucu birlikte gösteren vaka çalışmaları."}
+        description={projects.length === 1 ? "Standart ve özel ajanlar; güvenli entegrasyonlar, insan onayı, bilgi kaynakları ve doğrulanabilir görev yürütmeyle tek sistemde birleşir." : "Her proje; başlangıç problemi, alınan kararlar, teknik yaklaşım ve doğrulanabilir çıktılar üzerinden anlatılır."}
+      />
       <section className="section page-section"><div className={`container project-grid project-grid--listing${projects.length === 1 ? " project-grid--single" : ""}`}>{projects.map((project, index) => <Link href={`/projelerimiz/${project.slug}`} className="project-card" key={project.slug}><div className={`project-card__visual project-card__visual--${(index % 3) + 1}`}><div className="project-card__window"><span /><span /><span /><div className="project-card__diagram"><i /><i /><i /><i /></div></div></div><div className="project-card__body"><span className="project-card__category">{project.category}</span><h2>{project.title}</h2><p>{project.summary}</p><div className="project-card__metrics">{project.metrics.map((metric) => <span key={metric}>{metric}</span>)}</div></div></Link>)}</div></section>
     </>
   );
