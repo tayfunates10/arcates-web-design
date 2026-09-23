@@ -83,25 +83,11 @@ export const discoveryItems = [
 
 export const homeProjects = [
   {
-    slug: "vektoryum",
-    category: "SaaS · Yapay Zekâ",
-    title: "Vektoryum",
-    summary: "Raster görselleri üretime hazır vektör çıktılara dönüştüren kalite doğrulamalı SaaS sistemi.",
+    slug: "nexora-agentos",
+    category: "AI Agent Platform · SaaS",
+    title: "Nexora AgentOS",
+    summary: "İşletmelerin yapay zekâ ajanlarını, entegrasyonlarını ve görev akışlarını tek panelden yönettiği çok kiracılı AgentOS platformu.",
     accent: "cyan",
-  },
-  {
-    slug: "class-reklam",
-    category: "Kurumsal Web · Yerel SEO",
-    title: "Class Reklam",
-    summary: "Tabela hizmetlerini güçlü içerik mimarisi ve mobil öncelikli deneyimle buluşturan kurumsal platform.",
-    accent: "blue",
-  },
-  {
-    slug: "ergaxiom",
-    category: "Yapay Zekâ · Otomasyon",
-    title: "Ergaxiom",
-    summary: "Masaüstü uygulamalarını öğrenen, yetki kontrollü ve doğrulanabilir görev akışları çalıştıran ajan sistemi.",
-    accent: "violet",
   },
 ] as const;
 
