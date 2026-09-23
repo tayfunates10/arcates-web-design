@@ -86,7 +86,7 @@ export const homeProjects = [
     slug: "nexora-agentos",
     category: "AI Agent Platform · SaaS",
     title: "Nexora AgentOS",
-    summary: "İşletmelerin yapay zekâ ajanlarını, entegrasyonlarını ve görev akışlarını tek panelden yönettiği çok kiracılı AgentOS platformu.",
+    summary: "Standart ve özel yapay zekâ ajanlarını; güvenli entegrasyonlar, insan onayı ve doğrulanabilir görev yürütmeyle tek panelden yöneten AgentOS platformu.",
     accent: "cyan",
   },
 ] as const;
