@@ -10,7 +10,7 @@ const publicPaths = [
   "/web-cozumleri",
   "/web-cozumleri/kurumsal-web-tasarim",
   "/projelerimiz",
-  "/projelerimiz/vektoryum",
+  "/projelerimiz/nexora-agentos",
   "/hakkimizda",
   "/nasil-calisiyoruz",
   "/teknolojiler",
