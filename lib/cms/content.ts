@@ -99,9 +99,9 @@ const fallbackCases: CaseStudyEntry[] = projects.map((project) => ({
   summary: project.summary,
   result: project.result,
   metrics: [...project.metrics],
-  problem: "Kullanıcı ihtiyacını, operasyon kısıtlarını ve kalite beklentisini tek ürün akışında birleştiren sürdürülebilir bir sistem gereksinimi.",
-  solution: "Modüler mimari, doğrulama katmanları, yönetilebilir arayüz ve ölçülebilir performans hedefleriyle aşamalı geliştirme.",
-  technical: "Web uygulaması, görev akışları, veri modeli, güvenli servisler, raporlama ve üretim sonrası izleme birlikte tasarlandı.",
+  problem: project.problem,
+  solution: project.solution,
+  technical: project.technical,
   updatedAt: new Date(0),
 }));
 

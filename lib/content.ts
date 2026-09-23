@@ -108,9 +108,12 @@ export const projects = [
     slug: "nexora-agentos",
     category: "AI Agent Platform ve SaaS",
     title: "Nexora AgentOS",
-    summary: "İşletmelerin standart ve özel yapay zekâ ajanlarını, entegrasyonlarını ve görev akışlarını tek merkezden yönetmesini sağlayan AgentOS platformu.",
-    result: "Agent yönetimi, entegrasyon bağlantıları ve tenant bazlı görev yürütmeyi tek ürün deneyiminde birleştiren modüler sistem.",
-    metrics: ["Çok kiracılı AgentOS", "Agent ve entegrasyon yönetimi", "İzinli görev yürütme"],
+    summary: "İşletmelerin standart ve özel yapay zekâ ajanlarını; güvenli entegrasyonlar, insan onayı ve doğrulanabilir görev yürütmeyle yönettiği AgentOS platformu.",
+    problem: "İşletme ajanlarının yalnızca yanıt üretmesi yeterli değildi; farklı müşteri çalışma alanlarının, entegrasyon kimlik bilgilerinin, araç yetkilerinin ve gerçek işlemlerin birbirinden güvenli biçimde ayrılması gerekiyordu.",
+    solution: "Nexora; sürümlenmiş standart ajan kataloğunu özel ajanlarla, çalışma alanına bağlı entegrasyonları insan onay akışlarıyla ve kalıcı görev yürütmeyi doğrulama kanıtlarıyla tek kontrol düzleminde birleştiriyor.",
+    technical: "Next.js kontrol paneli; FastAPI servisleri, PostgreSQL/pgvector, Redis tabanlı worker çalıştırma, RAG bilgi kaynakları, izin politikaları, şifreli entegrasyon kasası, MCP araçları ve izole Chromium tarayıcı çalışma zamanı ile birlikte çalışıyor.",
+    result: "Çalışma alanı izolasyonu, ajan ve entegrasyon yönetimi, bütçe/harcama kontrolleri, gözlemlenebilir çalıştırmalar ve onay gerektiren dış işlemler için tek bir yönetilebilir AgentOS katmanı.",
+    metrics: ["Çalışma alanı izolasyonu", "İnsan onaylı eylemler", "Şifreli entegrasyon kasası"],
   },
 ] as const;
 
