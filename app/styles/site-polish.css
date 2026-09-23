@@ -921,3 +921,17 @@ section[id] {
     font-size: .68rem;
   }
 }
+
+
+/* Visual QA round 3: single featured project across breakpoints. */
+.premium-project-grid--single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.premium-project-grid--single > .premium-project-card,
+.premium-project-grid--single > .premium-project-card:last-child {
+  width: min(100%, 900px);
+  max-width: 900px;
+  margin-inline: auto;
+  grid-column: 1 / -1;
+}
