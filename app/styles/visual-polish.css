@@ -1,0 +1,117 @@
+/* Site-wide visual refinement layer.
+   Keeps the existing Arcates visual language while improving depth,
+   rhythm, interaction feedback and responsive rendering. */
+
+:root {
+  --arcates-section-line: rgba(111, 170, 255, .09);
+  --arcates-soft-glow: rgba(22, 119, 255, .08);
+  --arcates-focus: rgba(39, 212, 255, .52);
+}
+
+::selection { background: rgba(39, 212, 255, .2); color: #fff; }
+html { scroll-behavior: smooth; scroll-padding-top: 96px; }
+body { text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; }
+
+/* Give all marketing sections a calmer, more intentional rhythm. */
+.home-v2 .premium-section { isolation: isolate; }
+.home-v2 .premium-section::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, var(--arcates-section-line) 18%, var(--arcates-section-line) 82%, transparent);
+}
+
+.premium-section-heading h2,
+.premium-discovery__content h2,
+.premium-faq__questions h2,
+.premium-final-cta h2 { text-wrap: balance; }
+.premium-section-heading p,
+.premium-hero__lead,
+.premium-discovery__content > p,
+.premium-final-cta p { text-wrap: pretty; }
+
+/* Refine cards without changing their information architecture. */
+.premium-card,
+.premium-project-card,
+.premium-article-card,
+.premium-process-card,
+.premium-contact-card {
+  transform: translateZ(0);
+  will-change: transform;
+}
+.premium-card::before,
+.premium-project-card::before,
+.premium-article-card::before,
+.premium-process-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(135deg, rgba(255,255,255,.035), transparent 32%, transparent 70%, rgba(39,212,255,.025));
+}
+.premium-project-card,
+.premium-article-card,
+.premium-process-card { position: relative; overflow: hidden; }
+
+/* Clearer keyboard affordance across the whole public site. */
+.home-v2 a:focus-visible,
+.home-v2 button:focus-visible,
+.site-header a:focus-visible,
+.site-header button:focus-visible,
+.site-footer a:focus-visible {
+  outline: 3px solid var(--arcates-focus);
+  outline-offset: 4px;
+  border-radius: 8px;
+}
+
+/* Prevent CTA text from becoming cramped on narrow viewports. */
+.premium-button { text-align: center; line-height: 1.25; }
+.premium-hero__actions,
+.premium-final-cta__actions { align-items: stretch; }
+
+/* Better depth separation on dense content areas. */
+.premium-section--services,
+.premium-process,
+.premium-faq {
+  box-shadow: inset 0 1px rgba(255,255,255,.015), inset 0 -1px rgba(0,0,0,.22);
+}
+
+@media (max-width: 900px) {
+  .premium-section-heading { align-items: flex-start; }
+  .premium-section-heading .premium-text-link { margin-top: 4px; }
+  .premium-card,
+  .premium-project-card,
+  .premium-article-card,
+  .premium-process-card,
+  .premium-contact-card { will-change: auto; }
+}
+
+@media (max-width: 640px) {
+  html { scroll-padding-top: 76px; }
+  .premium-hero__actions,
+  .premium-final-cta__actions { display: grid; grid-template-columns: 1fr; }
+  .premium-hero__actions .premium-button,
+  .premium-final-cta__actions .premium-button { width: 100%; }
+  .premium-section-heading { gap: 22px; }
+  .premium-section-heading h2 { font-size: clamp(2rem, 10vw, 2.7rem); }
+  .premium-hero__trust { gap: 10px 14px; }
+  .premium-card::before,
+  .premium-project-card::before,
+  .premium-article-card::before,
+  .premium-process-card::before { opacity: .65; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .home-v2 *, .home-v2 *::before, .home-v2 *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .reveal,
+  .stagger-container > .stagger-item { opacity: 1 !important; transform: none !important; filter: none !important; }
+}
