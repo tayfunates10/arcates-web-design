@@ -26,9 +26,9 @@
     "db:seed": "node prisma/seed.mjs"
   },
   "dependencies": {
-    "@prisma/adapter-pg": "7.9.1",
-    "@prisma/client": "7.9.1",
-    "next": "16.2.12",
+    "@prisma/adapter-pg": "7.10.0",
+    "@prisma/client": "7.10.0",
+    "next": "16.3.6",
     "pg": "8.22.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
@@ -40,13 +40,15 @@
     "@types/pg": "8.20.0",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.0",
-    "prisma": "7.9.1",
+    "prisma": "7.10.0",
     "tsx": "^4.20.6",
     "typescript": "7.0.2"
   },
   "overrides": {
     "postcss": "8.5.23",
-    "sharp": "0.35.3"
+    "sharp": "0.35.4",
+    "deepmerge-ts": "8.0.2",
+    "mysql2": "3.23.1"
   },
   "engines": {
     "node": ">=22.0.0"
