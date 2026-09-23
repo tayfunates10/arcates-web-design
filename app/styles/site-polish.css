@@ -800,3 +800,37 @@ section[id] {
     width: 100%;
   }
 }
+
+
+/* Visual QA round 2: balance sparse and odd-count listing grids on wide screens. */
+@media (min-width: 1180px) {
+  .service-list-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .service-list-card {
+    min-height: 390px;
+    padding: 30px;
+  }
+
+  .service-list-card h2 {
+    font-size: clamp(1.45rem, 1.7vw, 1.85rem);
+  }
+
+  .blog-grid--listing {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .blog-grid--listing .blog-card {
+    min-height: 330px;
+  }
+
+  .project-grid--listing.project-grid--single {
+    grid-template-columns: minmax(0, 900px);
+    justify-content: center;
+  }
+
+  .project-grid--listing.project-grid--single .project-card {
+    width: 100%;
+  }
+}
