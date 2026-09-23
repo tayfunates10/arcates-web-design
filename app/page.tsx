@@ -119,7 +119,7 @@ export default function HomePage() {
             href="/projelerimiz"
             linkLabel="Tüm projeleri gör"
           />
-          <StaggerContainer className="premium-project-grid" amount={0.08}>
+          <StaggerContainer className={`premium-project-grid${homeProjects.length === 1 ? " premium-project-grid--single" : ""}`} amount={0.08}>
             {homeProjects.map((project) => (
               <Link href={`/projelerimiz/${project.slug}`} className="premium-project-card stagger-item" key={project.slug}>
                 <ProjectVisual variant={project.accent} />

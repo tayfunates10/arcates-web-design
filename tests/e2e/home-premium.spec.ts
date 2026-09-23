@@ -106,6 +106,42 @@ test("animated metrics settle once and retain stable formatted values", async ({
   expect(await counters.allTextContents()).toEqual(expectedValues);
 });
 
+test("mobile hero keeps readable single-column composition", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/", { waitUntil: "networkidle" });
+
+  const contentBox = await page.locator(".premium-hero__content").boundingBox();
+  const headingBox = await page.locator(".premium-hero h1").boundingBox();
+  const visualBox = await page.locator(".premium-hero__visual").boundingBox();
+  const primaryButtonBox = await page.locator(".premium-hero__actions .premium-button").first().boundingBox();
+
+  expect(contentBox).not.toBeNull();
+  expect(headingBox).not.toBeNull();
+  expect(visualBox).not.toBeNull();
+  expect(primaryButtonBox).not.toBeNull();
+  expect(headingBox!.width).toBeGreaterThan(320);
+  expect(primaryButtonBox!.width).toBeGreaterThan(320);
+  expect(visualBox!.y).toBeGreaterThanOrEqual(contentBox!.y + contentBox!.height - 2);
+  await expectNoHorizontalOverflow(page);
+});
+
+test("single featured project stays wide on tablet breakpoints", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+
+  for (const width of [768, 1024]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/#projects", { waitUntil: "networkidle" });
+
+    const gridBox = await page.locator(".premium-project-grid").boundingBox();
+    const cardBox = await page.locator(".premium-project-grid .premium-project-card").first().boundingBox();
+
+    expect(gridBox).not.toBeNull();
+    expect(cardBox).not.toBeNull();
+    expect(cardBox!.width).toBeGreaterThanOrEqual(gridBox!.width * 0.8);
+  }
+});
+
 test("capture deterministic desktop and mobile homepage review images", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
 
