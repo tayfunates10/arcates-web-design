@@ -106,6 +106,26 @@ test("animated metrics settle once and retain stable formatted values", async ({
   expect(await counters.allTextContents()).toEqual(expectedValues);
 });
 
+test("mobile hero keeps readable single-column composition", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/", { waitUntil: "networkidle" });
+
+  const contentBox = await page.locator(".premium-hero__content").boundingBox();
+  const headingBox = await page.locator(".premium-hero h1").boundingBox();
+  const visualBox = await page.locator(".premium-hero__visual").boundingBox();
+  const primaryButtonBox = await page.locator(".premium-hero__actions .premium-button").first().boundingBox();
+
+  expect(contentBox).not.toBeNull();
+  expect(headingBox).not.toBeNull();
+  expect(visualBox).not.toBeNull();
+  expect(primaryButtonBox).not.toBeNull();
+  expect(headingBox!.width).toBeGreaterThan(320);
+  expect(primaryButtonBox!.width).toBeGreaterThan(320);
+  expect(visualBox!.y).toBeGreaterThanOrEqual(contentBox!.y + contentBox!.height - 2);
+  await expectNoHorizontalOverflow(page);
+});
+
 test("capture deterministic desktop and mobile homepage review images", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
 
