@@ -943,3 +943,11 @@ section[id] {
     display: none;
   }
 }
+
+
+/* Visual QA round 5: keep authenticated mobile portals obstruction-free. */
+@media (max-width: 760px) {
+  body:has(.portal-shell) .chat-widget {
+    display: none;
+  }
+}
