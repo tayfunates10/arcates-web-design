@@ -105,28 +105,12 @@ export const services: Service[] = [
 
 export const projects = [
   {
-    slug: "vektoryum",
-    category: "SaaS ve Yapay Zekâ",
-    title: "Vektoryum",
-    summary: "Raster görselleri üretime uygun vektör çıktılara dönüştüren ileri seviye SaaS altyapısı.",
-    result: "Çok formatlı çıktı, kalite ölçümü ve otomatik doğrulama akışı.",
-    metrics: ["SVG, PDF, EPS, DXF", "Kalite değerlendirme", "Ölçeklenebilir işlem hattı"],
-  },
-  {
-    slug: "class-reklam",
-    category: "Kurumsal Web ve Yerel SEO",
-    title: "Class Reklam",
-    summary: "Tabela ve reklam üretim hizmetlerini yerel arama niyetiyle buluşturan kurumsal web deneyimi.",
-    result: "Hizmet mimarisi, hızlı mobil deneyim ve içerik yönetimi.",
-    metrics: ["Mobil öncelikli", "Yerel SEO", "Yönetilebilir içerik"],
-  },
-  {
-    slug: "ergaxiom",
-    category: "Yapay Zekâ ve Otomasyon",
-    title: "Ergaxiom",
-    summary: "Masaüstü uygulamalarını öğrenen ve doğrulanmış görev akışlarıyla kullanan ajan sistemi tasarımı.",
-    result: "Yetkinlik paketleri, denetlenebilir araç kullanımı ve doğrulama katmanı.",
-    metrics: ["Çoklu platform", "Yetki kontrollü", "Doğrulama odaklı"],
+    slug: "nexora-agentos",
+    category: "AI Agent Platform ve SaaS",
+    title: "Nexora AgentOS",
+    summary: "İşletmelerin standart ve özel yapay zekâ ajanlarını, entegrasyonlarını ve görev akışlarını tek merkezden yönetmesini sağlayan AgentOS platformu.",
+    result: "Agent yönetimi, entegrasyon bağlantıları ve tenant bazlı görev yürütmeyi tek ürün deneyiminde birleştiren modüler sistem.",
+    metrics: ["Çok kiracılı AgentOS", "Agent ve entegrasyon yönetimi", "İzinli görev yürütme"],
   },
 ] as const;
 
