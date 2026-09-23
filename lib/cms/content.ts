@@ -90,6 +90,8 @@ const fallbackBlogs: BlogEntry[] = blogPosts.map((post) => ({
   updatedAt: new Date(0),
 }));
 
+const PUBLIC_CASE_STUDY_SLUG = "nexora-agentos";
+
 const fallbackCases: CaseStudyEntry[] = projects.map((project) => ({
   slug: project.slug,
   title: project.title,
@@ -159,15 +161,18 @@ export async function getPublishedCaseStudies(): Promise<CaseStudyEntry[]> {
     const cms = readCmsEnvelope(document.metadata);
     return cms?.kind === "CASE_STUDY" && cms.status === "PUBLISHED" ? [toCase(document, cms)] : [];
   });
-  return entries.length ? entries.sort(byNewest) : fallbackCases;
+  const nexora = entries.find((item) => item.slug === PUBLIC_CASE_STUDY_SLUG);
+  return nexora ? [nexora] : fallbackCases.filter((item) => item.slug === PUBLIC_CASE_STUDY_SLUG);
 }
 
 export async function getPublishedCaseStudy(slug: string): Promise<CaseStudyEntry | null> {
+  if (slug !== PUBLIC_CASE_STUDY_SLUG) return null;
+
   const documents = await cmsDocuments();
-  const document = documents.find((item) => item.slug === slug);
+  const document = documents.find((item) => item.slug === PUBLIC_CASE_STUDY_SLUG);
   const cms = document ? readCmsEnvelope(document.metadata) : null;
   if (document && cms?.kind === "CASE_STUDY" && cms.status === "PUBLISHED") return toCase(document, cms);
-  return fallbackCases.find((item) => item.slug === slug) ?? null;
+  return fallbackCases.find((item) => item.slug === PUBLIC_CASE_STUDY_SLUG) ?? null;
 }
 
 export async function getPublishedFaqItems(): Promise<FaqEntry[]> {

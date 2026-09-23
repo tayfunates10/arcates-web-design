@@ -1,4 +1,4 @@
-.project-grid--listing { grid-template-columns: 1fr 1fr; }
+.project-grid--listing { grid-template-columns: minmax(0, 1fr); max-width: 980px; }
 .project-grid--listing .project-card__visual { height: 360px; }
 .case-study { max-width: 1100px; }
 .case-study__visual { height: 520px; display: grid; place-items: center; margin-bottom: 70px; border: 1px solid var(--border-soft); border-radius: var(--radius-lg); background: radial-gradient(circle, rgba(29,140,255,.16), rgba(11,23,40,.72)); }
