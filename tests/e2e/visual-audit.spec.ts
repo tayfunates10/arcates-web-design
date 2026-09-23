@@ -91,3 +91,13 @@ test("capture authenticated customer and admin screens for real visual review", 
     }
   }
 });
+
+
+test("mobile auth forms keep chat launcher out of form controls", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/kayit", { waitUntil: "networkidle" });
+
+  await expect(page.locator(".chat-widget")).toBeHidden();
+  await expect(page.getByRole("checkbox")).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+});

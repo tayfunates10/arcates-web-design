@@ -935,3 +935,11 @@ section[id] {
   margin-inline: auto;
   grid-column: 1 / -1;
 }
+
+
+/* Visual QA round 4: keep mobile auth forms obstruction-free. */
+@media (max-width: 760px) {
+  body:has(.auth-shell) .chat-widget {
+    display: none;
+  }
+}
